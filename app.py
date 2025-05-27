@@ -3,7 +3,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'RSL_Clan_Manager_Project.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'raid_clan_manager.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
