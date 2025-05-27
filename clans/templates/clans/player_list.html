@@ -1,0 +1,150 @@
+{% extends "clans/base.html" %}
+
+{% block title %}Players List{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-2xl font-semibold text-white">Players List</h2>
+    <p class="text-sm text-gray-400">Manage and view all players in the system</p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl shadow">
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+        <h3 class="text-lg font-semibold text-white mb-2 sm:mb-0">All Players</h3>
+        <div class="flex items-center space-x-2">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="Search players..." 
+                       class="bg-gray-700 text-sm text-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 w-full sm:w-auto">
+                <i class="fas fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <button id="filterToggle" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm py-2 px-3 rounded-lg flex items-center space-x-1">
+                <i class="fas fa-sort-amount-down text-xs"></i>
+                <span>Filter</span>
+            </button>
+            <a href="{% url 'player_create' %}" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Add Player</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-gray-400">
+            <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                <tr>
+                    <th scope="col" class="px-4 py-3">Player Name</th>
+                    <th scope="col" class="px-4 py-3">Level</th>
+                    <th scope="col" class="px-4 py-3">Player Power (mil)</th>
+                    <th scope="col" class="px-4 py-3">Current Clan</th>
+                    <th scope="col" class="px-4 py-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                    <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
+                    <td class="px-4 py-3">{{ player.level }}</td>
+                    <td class="px-4 py-3">{{ player.player_power }}</td>
+                    <td class="px-4 py-3">
+                        {% if player.clans.first %}
+                            <span class="bg-blue-600 text-blue-100 text-xs font-medium px-2.5 py-0.5 rounded">
+                                {{ player.clans.first.name }}
+                            </span>
+                        {% else %}
+                            <span class="bg-gray-600 text-gray-100 text-xs font-medium px-2.5 py-0.5 rounded">
+                                No Clan
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'player_detail' player.uuid %}" class="text-blue-500 hover:text-blue-400">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'player_edit' player.uuid %}" class="text-yellow-500 hover:text-yellow-400">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="confirmDelete('{{ player.uuid }}', '{{ player.name }}', '{{ player.player_id_ingame }}')"
+                                    class="text-red-500 hover:text-red-400">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchValue) ? '' : 'none';
+    });
+});
+
+// Sort functionality
+document.querySelectorAll('th').forEach(header => {
+    header.addEventListener('click', () => {
+        const index = Array.from(header.parentNode.children).indexOf(header);
+        const rows = Array.from(document.querySelectorAll('tbody tr'));
+        const isNumeric = header.textContent.includes('Level') || header.textContent.includes('Power');
+        
+        rows.sort((a, b) => {
+            const aValue = a.children[index].textContent;
+            const bValue = b.children[index].textContent;
+            
+            if (isNumeric) {
+                return parseInt(aValue) - parseInt(bValue);
+            }
+            return aValue.localeCompare(bValue);
+        });
+        
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+    });
+});
+
+async function confirmDelete(playerId, playerName, playerIngameId) {
+    const input = prompt(
+        `To delete ${playerName}, please enter their in-game name:\n` +
+        `(${playerIngameId})`
+    );
+
+    if (input === null) return; // User clicked Cancel
+    
+    if (input === playerIngameId) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        try {
+            const response = await fetch(`/api/players/${playerId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Remove the row from the table
+                const row = document.querySelector(`button[onclick*="${playerId}"]`).closest('tr');
+                row.remove();
+            } else {
+                throw new Error('Failed to delete player');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to delete player. Please try again.');
+        }
+    } else {
+        alert('In-game name does not match. Deletion cancelled.');
+    }
+}
+</script>
+{% endblock %}

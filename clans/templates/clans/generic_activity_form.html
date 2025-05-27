@@ -1,0 +1,243 @@
+{% extends "clans/base.html" %}
+{% load form_filters %}
+{% load clan_filters %}
+
+{% block title %}{{ action_verb }} {{ activity_type }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-2xl font-semibold text-white">{{ action_verb }} {{ activity_type }}</h2>
+    <p class="text-sm text-gray-400">For clan: {{ clan.name }}</p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-2xl">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-6">
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-400 mb-2">
+                    {{ field.label }}
+                </label>
+                <div class="relative">
+                    {% if field.name == 'opponent_scores' %}
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <button type="button" 
+                                        id="add-opponent-btn"
+                                        onclick="addOpponent()" 
+                                        class="bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-2 rounded-lg">
+                                    <i class="fas fa-plus mr-1"></i>Add Opponent
+                                </button>
+                            </div>
+                            
+                            <table id="opponents-table" class="w-full">
+                                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Opponent</th>
+                                        <th class="px-4 py-2 text-right">Score</th>
+                                        <th class="px-4 py-2 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="opponents-body">
+                                    <tr id="our-clan-row" class="border-b border-gray-700">
+                                        <td class="px-4 py-2">
+                                            <span class="text-purple-400">{{ clan.name }} (Our Clan)</span>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="number" 
+                                                   class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2"
+                                                   onchange="updateScores()"
+                                                   id="our-score">
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            {{ field }}
+                            <p class="text-xs text-gray-400 mt-2">
+                                Maximum of 5 clans total (including our clan)
+                            </p>
+                        </div>
+
+                        <script>
+                        function addOpponent() {
+                            const tbody = document.getElementById('opponents-body');
+                            const existingOpponents = tbody.querySelectorAll('tr:not(#our-clan-row)').length;
+                            
+                            if (existingOpponents >= 4) { // Max 4 opponents + our clan = 5 total
+                                alert('Maximum of 4 opponents reached');
+                                return;
+                            }
+                            
+                            const newRow = document.createElement('tr');
+                            newRow.className = 'border-b border-gray-700';
+                            newRow.innerHTML = `
+                                <td class="px-4 py-2">
+                                    <input type="text" 
+                                           class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2"
+                                           placeholder="Opponent name"
+                                           onchange="updateScores()">
+                                </td>
+                                <td class="px-4 py-2">
+                                    <input type="number" 
+                                           class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2"
+                                           onchange="updateScores()">
+                                </td>
+                                <td class="px-4 py-2 text-center">
+                                    <button onclick="this.closest('tr').remove(); updateScores(); checkAddButton()" 
+                                            class="text-red-400 hover:text-red-300">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(newRow);
+                            checkAddButton();
+                        }
+
+                        function checkAddButton() {
+                            const tbody = document.getElementById('opponents-body');
+                            const addButton = document.getElementById('add-opponent-btn');
+                            const existingOpponents = tbody.querySelectorAll('tr:not(#our-clan-row)').length;
+                            
+                            if (existingOpponents >= 4) {
+                                addButton.classList.add('opacity-50', 'cursor-not-allowed');
+                                addButton.disabled = true;
+                            } else {
+                                addButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                                addButton.disabled = false;
+                            }
+                        }
+
+                        function updateScores() {
+                            const scores = {};
+                            
+                            // Add our clan's score
+                            const ourClanName = "{{ clan.name }}";
+                            const ourScore = document.getElementById('our-score').value;
+                            scores[ourClanName] = parseFloat(ourScore) || 0;
+
+                            // Add opponent scores
+                            document.querySelectorAll('#opponents-body tr:not(#our-clan-row)').forEach(row => {
+                                const name = row.querySelector('input[type="text"]').value;
+                                const score = row.querySelector('input[type="number"]').value;
+                                if (name) {
+                                    scores[name] = parseFloat(score) || 0;
+                                }
+                            });
+
+                            document.querySelector('input[name="opponent_scores"]').value = JSON.stringify(scores);
+                        }
+
+                        // Initialize with existing data if editing
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const existingData = {{ activity_instance.opponent_scores|default:'null'|safe }};
+                            if (existingData) {
+                                // Set our clan's score
+                                const ourScore = existingData["{{ clan.name }}"];
+                                if (ourScore) {
+                                    document.getElementById('our-score').value = ourScore;
+                                }
+
+                                // Add opponent scores
+                                Object.entries(existingData).forEach(([name, score]) => {
+                                    if (name !== "{{ clan.name }}") {
+                                        const tbody = document.getElementById('opponents-body');
+                                        const newRow = document.createElement('tr');
+                                        newRow.className = 'border-b border-gray-700';
+                                        newRow.innerHTML = `
+                                            <td class="px-4 py-2">
+                                                <input type="text" 
+                                                       class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2"
+                                                       value="${name}"
+                                                       onchange="updateScores()">
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" 
+                                                       class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2"
+                                                       value="${score}"
+                                                       onchange="updateScores()">
+                                            </td>
+                                            <td class="px-4 py-2 text-center">
+                                                <button onclick="this.closest('tr').remove(); updateScores(); checkAddButton()" 
+                                                        class="text-red-400 hover:text-red-300">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        `;
+                                        tbody.appendChild(newRow);
+                                    }
+                                });
+                                checkAddButton();
+                                updateScores();
+                            }
+                        });
+                        </script>
+                    {% else %}
+                        {% if field.field.widget.input_type == "checkbox" %}
+                        <label class="inline-flex items-center space-x-3">
+                            <input type="checkbox" 
+                                   name="{{ field.name }}" 
+                                   value="{{ value }}"
+                                   {% if value in field.value %}checked{% endif %}>
+                            <span class="text-sm text-gray-300">{{ label }}</span>
+                        </label>
+                        {% else %}
+                            {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+                        {% endif %}
+                    {% endif %}
+                </div>
+                
+                {% for error in field.errors %}
+                    <p class="mt-2 text-xs text-red-400">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <div class="flex items-center space-x-3 mt-8">
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-save"></i>
+                <span>Save {{ activity_type }}</span>
+            </button>
+            <a href="{% url 'clan_detail' clan.clan_id %}" 
+               class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-times"></i>
+                <span>Cancel</span>
+            </a>
+        </div>
+    </form>
+</div>
+
+{% if activity_instance %}
+<div class="mt-8 text-center">
+    <button onclick="deleteRecord('{{ activity_type|lower }}', '{{ activity_instance|get_attribute:config.id_field }}')" 
+            class="text-red-500 hover:text-red-400 text-sm">
+        <i class="fas fa-trash mr-1"></i>
+        Delete this record
+    </button>
+</div>
+{% endif %}
+
+<script>
+async function deleteRecord(activityType, recordId) {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    
+    try {
+        const response = await fetch(`/api/activities/${activityType}/${recordId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+
+        if (response.ok) {
+            window.location.href = "{% url 'clan_detail' clan.clan_id %}";
+        } else {
+            throw new Error('Failed to delete record');
+        }
+    } catch (error) {
+        console.error('Error deleting record:', error);
+        alert('Failed to delete record. Please try again.');
+    }
+}
+</script>
+{% endblock %}

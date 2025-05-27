@@ -1,0 +1,137 @@
+{% extends "clans/base.html" %}
+
+{% block title %}Dashboard - Raid Clan Manager{% endblock %}
+
+{% block content %}
+<div class="space-y-12">
+    <section>
+        <!-- Clans Header -->
+        <div class="bg-brand-surface rounded-lg shadow p-6 flex items-center gap-4">
+            <svg class="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h11M9 21V3m0 0L3 10m6-7l6 7"></path>
+            </svg>
+            <div class="flex-grow">
+                <h1 class="text-3xl font-semibold text-brand-text">Clans</h1>
+            </div>
+            <a href="{% url 'clan_create' %}" class="w-full sm:w-auto bg-brand-primary hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg inline-flex items-center justify-center transition-colors text-sm">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
+                </svg>
+                Add New Clan
+            </a>
+        </div>
+
+        {% if clans %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for clan in clans %}
+            <div class="bg-brand-surface rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col">
+                <!-- Clan card content -->
+                <div class="p-6 flex-grow">
+                    <div class="flex justify-between items-start mb-3">
+                        <a href="{% url 'clan_detail' clan.clan_id %}" class="block text-xl font-semibold text-brand-primary hover:underline">{{ clan.name }}</a>
+                        <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">{{ clan.players.count }} Player{{ clan.players.count|pluralize }}</span>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-sm text-brand-text-muted">
+                            <span class="inline-block w-20">Level:</span>
+                            <span class="font-medium text-gray-300">{{ clan.clan_level }}</span>
+                        </p>
+                        <p class="text-sm text-brand-text-muted">
+                            <span class="inline-block w-20">Boss:</span>
+                            <span class="font-medium text-gray-300">{{ clan.get_boss_levels_display|default:"None" }}</span>
+                        </p>
+                        <p class="text-sm text-brand-text-muted">
+                            <span class="inline-block w-20">Power:</span>
+                            <span class="font-medium text-gray-300">{{ clan.total_power|floatformat:2 }}M</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-gray-700/50 p-4 border-t border-brand-border">
+                     <a href="{% url 'clan_edit' clan.clan_id %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors w-full block text-center">Edit Clan</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="bg-brand-surface rounded-lg shadow p-8 text-center">
+            <svg class="w-12 h-12 text-brand-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <p class="text-xl font-medium text-brand-text-muted">No clans found.</p>
+            <p class="text-sm text-brand-text-muted mt-1">Get started by adding a new clan.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <hr class="border-brand-border my-12">
+
+    <section>
+        <!-- Players Header -->
+        <div class="bg-brand-surface rounded-lg shadow p-6 flex items-center gap-4">
+            <svg class="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <div class="flex-grow">
+                <h2 class="text-3xl font-semibold text-brand-text">Players</h2>
+            </div>
+            <a href="{% url 'player_create' %}" class="w-full sm:w-auto bg-brand-primary hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg inline-flex items-center justify-center transition-colors text-sm">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
+                </svg>
+                Add New Player
+            </a>
+        </div>
+
+        {% if players %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+            {% for player in players|slice:":10" %}
+            <div class="bg-brand-surface rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col">
+                <!-- Player card content -->
+                <div class="p-6 flex-grow">
+                    <div class="flex justify-between items-start mb-3">
+                        <a href="{% url 'player_detail' player.uuid %}" class="block text-xl font-semibold text-brand-primary hover:underline">{{ player.name }}</a>
+                        {% if player.clan_set.exists %}
+                        <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">
+                            {{ player.clan_set.first.name }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-sm text-brand-text-muted">
+                            <span class="inline-block w-16">Level:</span>
+                            <span class="font-medium text-gray-300">{{ player.level }}</span>
+                        </p>
+                        <p class="text-sm text-brand-text-muted">
+                            <span class="inline-block w-16">Power:</span>
+                            <span class="font-medium text-gray-300">{{ player.player_power|default:"N/A" }}</span>
+                        </p>
+                        <p class="text-xs text-brand-text-muted truncate" title="{{ player.player_id_ingame }}">
+                            <span class="inline-block w-16">ID:</span>
+                            <span class="font-mono">{{ player.player_id_ingame }}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="bg-gray-700/50 p-4 border-t border-brand-border">
+                    <a href="{% url 'player_edit' player.uuid %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors w-full block text-center">Edit Player</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="">
+            <a href="{% url 'player_list' %}" 
+               class="inline-flex items-center justify-center px-6 py-3 border border-brand-border rounded-lg text-sm font-medium text-brand-text-muted hover:bg-gray-700/50 transition-colors">
+                Manage Players
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </a>
+        </div>
+        {% else %}
+        <div class="bg-brand-surface rounded-lg shadow p-8 text-center">
+            <svg class="w-12 h-12 text-brand-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <p class="text-xl font-medium text-brand-text-muted">No players found.</p>
+            <p class="text-sm text-brand-text-muted mt-1">Get started by adding a new player.</p>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

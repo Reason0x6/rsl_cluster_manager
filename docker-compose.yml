@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - data_volume:/app/data
+    ports:
+      - "8000:8000"
+      - "8080:8080"
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=raid_clan_manager.settings
+      # Add health check for database
+      - DATABASE_URL=postgres://rsl_user:rsl_password@db:5432/rsl_clan_manager
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=rsl_clan_manager
+      - POSTGRES_USER=rsl_user
+      - POSTGRES_PASSWORD=rsl_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rsl_user -d rsl_clan_manager"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+  data_volume:

@@ -1,0 +1,470 @@
+{% extends "clans/base.html" %}
+{% load humanize %}
+
+{% block title %}LA Tracker{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <header class="bg-brand-surface rounded-xl shadow-lg p-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-semibold text-white mb-1">Live Arena Tracker</h1>
+                <p class="text-sm text-brand-text-muted">Track Player Progress in Live Arena</p>
+            </div>
+            
+            <!-- Player Selection -->
+            <div class="flex items-center gap-4">
+                <select id="player-select" 
+                        class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 p-2.5">
+                    <option value="">Select Player</option>
+                    {% for player in players %}
+                        <option value="{{ player.uuid }}" {% if selected_player.uuid == player.uuid %}selected{% endif %}>
+                            {{ player.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                
+                <button onclick="addBattle()" 
+                        class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Battle</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    {% if selected_player %}
+        <!-- Points History Graph -->
+        <div class="bg-brand-surface rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Points History</h3>
+            <div class="h-64">
+                <canvas id="pointsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Battles -->
+        <div class="bg-brand-surface rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-white">Recent Battles</h3>
+                    <div class="relative">
+                        <input type="text" 
+                               id="battleSearch" 
+                               placeholder="Search battles..."
+                               class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-64 p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+                        <i class="fas fa-search absolute right-3 top-2.5 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <!-- Update the table headers -->
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                                <th class="px-4 py-3">Date</th>
+                                <th class="px-4 py-3">Opponent</th>
+                                <th class="px-4 py-3">Points Change</th>
+                                <th class="px-4 py-3">Total Points</th>
+                                <th class="px-4 py-3">My Champions</th>
+                                <th class="px-4 py-3">Opponent Champions</th>
+                                <th class="px-4 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for battle in battles %}
+                            <tr class="border-b border-gray-700 battle-row">
+                                <td class="px-4 py-3">{{ battle.date_recorded|date:"M d, Y H:i" }}</td>
+                                <td class="px-4 py-3" data-opponent>{{ battle.opponent_name }}</td>
+                                <td class="px-4 py-3 {% if battle.points_change > 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                                    {{ battle.points_change|stringformat:"+d" }}
+                                </td>
+                                <td class="px-4 py-3">{{ battle.current_points|intcomma }}</td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for champion in battle.my_champions %}
+                                            <span class="bg-purple-600/20 text-purple-400 text-xs px-2 py-1 rounded" 
+                                                  data-my-champion>{{ champion }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for champion in battle.opponent_champions %}
+                                            <span class="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded"
+                                                  data-opp-champion>{{ champion }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex space-x-2">
+                                        <button onclick="editBattle('{{ battle.battle_id }}')"
+                                                class="text-yellow-500 hover:text-yellow-400">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteBattle('{{ battle.battle_id }}')"
+                                                class="text-red-500 hover:text-red-400">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-brand-surface rounded-xl shadow-lg p-6 text-center">
+            <p class="text-brand-text-muted">Select a player to view their LA battles</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Battle Modal -->
+<div id="battleModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl max-w-md w-full mx-4 shadow-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold text-white" id="modalTitle">Add Battle</h3>
+            <button onclick="closeBattleModal()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="battleForm" class="space-y-4">
+            {% csrf_token %}
+            <input type="hidden" id="battleId" name="battleId">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Opponent Name</label>
+                <input type="text" id="opponentName" name="opponentName" required
+                       class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Points Change</label>
+                <input type="number" id="pointsChange" name="pointsChange" required
+                       class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500">
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">My Champions</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                        {% for i in '12345'|make_list %}
+                        <input type="text" 
+                               id="myChampion{{ forloop.counter }}" 
+                               name="myChampion{{ forloop.counter }}"
+                               class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                               placeholder="Champion {{ forloop.counter }}">
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-2">Opponent Champions</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                        {% for i in '12345'|make_list %}
+                        <input type="text" 
+                               id="opponentChampion{{ forloop.counter }}"
+                               name="opponentChampion{{ forloop.counter }}"
+                               class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                               placeholder="Champion {{ forloop.counter }}">
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-700">
+                <button type="button" onclick="closeBattleModal()" 
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
+                    Save Battle
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Make sure we have access to CSRF token
+const csrfToken = '{{ csrf_token }}';
+
+// Store selected player ID globally if one is selected
+const selectedPlayerId = '{{ selected_player.uuid|default:"" }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, setting up event listeners');
+    
+    // Player selection handling
+    const playerSelect = document.getElementById('player-select');
+    if (playerSelect) {
+        playerSelect.addEventListener('change', function() {
+            console.log('Player selected:', this.value);
+            if (this.value) {
+                window.location.href = `{% url 'la_tracker' %}?player=${this.value}`;
+            }
+        });
+    } else {
+        console.warn('Player select element not found');
+    }
+
+    // Only setup battle-related features if a player is selected
+    if (selectedPlayerId) {
+        // Battle form handling
+        const battleForm = document.getElementById('battleForm');
+        if (battleForm) {
+            battleForm.addEventListener('submit', saveBattle);
+        }
+
+        // Add battle button handling
+        const addBattleBtn = document.querySelector('[onclick="addBattle()"]');
+        if (addBattleBtn) {
+            addBattleBtn.disabled = false;
+        }
+
+        // Add search functionality
+        const battleSearch = document.getElementById('battleSearch');
+        if (battleSearch) {
+            battleSearch.addEventListener('input', filterBattles);
+        }
+
+     {% if selected_player %}
+        initializeChart();
+        {% endif %}
+    } else {
+        // Disable battle-related features when no player is selected
+        const addBattleBtn = document.querySelector('[onclick="addBattle()"]');
+        if (addBattleBtn) {
+            addBattleBtn.disabled = true;
+            addBattleBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
+});
+
+// Show/hide battle modal
+function addBattle() {
+    if (!selectedPlayerId) {
+        alert('Please select a player first');
+        return;
+    }
+    const modal = document.getElementById('battleModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        // Reset form
+        document.getElementById('battleForm').reset();
+        document.getElementById('battleId').value = '';
+    }
+}
+
+function closeBattleModal() {
+    const modal = document.getElementById('battleModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+
+async function saveBattle(e) {
+    e.preventDefault();
+    
+    // Collect champion data from individual inputs
+    const myChampions = [];
+    const opponentChampions = [];
+    
+    for (let i = 1; i <= 5; i++) {
+        const myChamp = document.getElementById(`myChampion${i}`).value.trim();
+        const oppChamp = document.getElementById(`opponentChampion${i}`).value.trim();
+        
+        if (myChamp) myChampions.push(myChamp);
+        if (oppChamp) opponentChampions.push(oppChamp);
+    }
+    
+    const battleData = {
+        opponent_name: document.getElementById('opponentName').value,
+        points_change: parseInt(document.getElementById('pointsChange').value),
+        my_champions: myChampions,
+        opponent_champions: opponentChampions
+    };
+
+    const battleId = document.getElementById('battleId').value;
+    const method = battleId ? 'PUT' : 'POST';
+    const url = battleId 
+        ? `/api/la-battles/${battleId}/`
+        : `/api/players/${selectedPlayerId}/la-battles/`;
+
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(battleData)
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            throw new Error('Failed to save battle');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to save battle');
+    }
+}
+
+// Add a function to populate the form when editing
+function editBattle(battleId) {
+    // Fetch battle data and populate form
+    fetch(`/api/la-battles/${battleId}/`)
+        .then(response => response.json())
+        .then(battle => {
+            document.getElementById('battleId').value = battleId;
+            document.getElementById('opponentName').value = battle.opponent_name;
+            document.getElementById('pointsChange').value = battle.points_change;
+            
+            // Populate champion inputs
+            battle.my_champions.forEach((champ, index) => {
+                const input = document.getElementById(`myChampion${index + 1}`);
+                if (input) input.value = champ;
+            });
+            
+            battle.opponent_champions.forEach((champ, index) => {
+                const input = document.getElementById(`opponentChampion${index + 1}`);
+                if (input) input.value = champ;
+            });
+            
+            // Show modal
+            const modal = document.getElementById('battleModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load battle data');
+        });
+}
+ {% if selected_player %}
+function initializeChart() {
+    const ctx = document.getElementById('pointsChart').getContext('2d');
+    if (!ctx) return;
+
+    const chartData = {
+        labels: {{ battle_dates|safe }},
+        datasets: [
+            {
+                label: 'Total Points',
+                data: {{ total_points|safe }},
+                borderColor: 'rgb(147, 51, 234)',
+                tension: 0.1,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Point Change',
+                data: {{ point_changes|safe }},
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: point => {
+                    const value = point.raw;
+                    return value >= 0 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)';
+                },
+                type: 'bar',
+                yAxisID: 'y1'
+            }
+        ]
+    };
+
+    new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: 'rgb(156, 163, 175)'
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.2)'
+                    },
+                    ticks: {
+                        color: 'rgb(156, 163, 175)'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Total Points',
+                        color: 'rgb(147, 51, 234)'
+                    },
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.2)'
+                    },
+                    ticks: {
+                        color: 'rgb(156, 163, 175)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Point Change',
+                        color: 'rgb(59, 130, 246)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: 'rgb(156, 163, 175)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+        {% endif %}
+
+function filterBattles(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tr.battle-row');
+
+    rows.forEach(row => {
+        const opponent = row.querySelector('[data-opponent]')?.textContent.toLowerCase() || '';
+        const myChamps = Array.from(row.querySelectorAll('[data-my-champion]'))
+            .map(span => span.textContent.toLowerCase());
+        const oppChamps = Array.from(row.querySelectorAll('[data-opp-champion]'))
+            .map(span => span.textContent.toLowerCase());
+
+        const matchesSearch = 
+            opponent.includes(searchTerm) ||
+            myChamps.some(champ => champ.includes(searchTerm)) ||
+            oppChamps.some(champ => champ.includes(searchTerm));
+
+        row.classList.toggle('hidden', !matchesSearch);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,392 @@
+{% extends "clans/base.html" %}
+{% load humanize %}
+{% load clan_tags %}
+
+{% block title %}{{ clan.name }} - Clan Details{% endblock %}
+
+{% block content %}
+<div class="space-y-10">
+    <header class="bg-brand-surface rounded-xl shadow-lg overflow-hidden">
+        <!-- Main Header -->
+        <div class="p-6 md:p-8">
+            <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-brand-primary/10 p-3 rounded-lg">
+                        <svg class="w-10 h-10 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h11M9 21V3m0 0L3 10m6-7l6 7"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-semibold text-brand-text">{{ clan.name }}</h1>
+                        <p class="text-brand-text-muted mt-1">Level {{ clan.clan_level }} Clan</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'clan_edit' clan.clan_id %}" class="bg-brand-primary hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg inline-flex items-center justify-center transition-colors text-sm">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Edit Clan Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+       
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-5 divide-x divide-y divide-brand-border border-t border-brand-border">
+            <div class="p-6 text-center">
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.players.count }}</div>
+                <div class="text-sm text-brand-text-muted">Members</div>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.total_power|floatformat:2 }}M</div>
+                <div class="text-sm text-brand-text-muted">Total Power</div>
+            </div>
+            
+            <div class="p-6 text-center">
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.personal_rewards_cvc_threshold|intcomma }}/{{ clan.non_pr_cvc_threshold|intcomma }}</div>
+                <div class="text-sm text-brand-text-muted">Personal vs Non Personal</div>
+            </div>
+            
+            <div class="p-6 text-center">
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.hydra_clash_required_score|floatformat:1 }}B</div>
+                <div class="text-sm text-brand-text-muted">Hydra Req.</div>
+            </div>
+            <div class="p-6 text-center">
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.chimera_clash_required_score|floatformat:1 }}B</div>
+                <div class="text-sm text-brand-text-muted">Chimera Req.</div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="bg-gray-800/50 p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- CvC Performance -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-brand-text-muted">CvC Performance</span>
+                        <span class="text-sm text-brand-text">{{ cvc_performance|floatformat:1 }}%</span>
+                    </div>
+                    <div class="h-2.5 rounded-full bg-gray-700">
+                        <div class="h-2.5 rounded-full {% if cvc_performance >= 80 %}bg-green-500{% elif cvc_performance >= 60 %}bg-yellow-500{% elif cvc_performance >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
+                             style="width: {{ cvc_performance }}%"></div>
+                    </div>
+                    <p class="text-xs text-brand-text-muted">Based on win rate (our score > opponent score)</p>
+                </div>
+                
+                <!-- Hydra Progress -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-brand-text-muted">Hydra Performance</span>
+                        <span class="text-sm text-brand-text">{{ hydra_progress|floatformat:1 }}%</span>
+                    </div>
+                    <div class="h-2.5 rounded-full bg-gray-700">
+                        <div class="h-2.5 rounded-full {% if hydra_progress >= 80 %}bg-green-500{% elif hydra_progress >= 60 %}bg-yellow-500{% elif hydra_progress >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
+                             style="width: {{ hydra_progress }}%"></div>
+                    </div>
+                    <p class="text-xs text-brand-text-muted">Based on average placement (1st = 100%)</p>
+                </div>
+
+                <!-- Chimera Progress -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-brand-text-muted">Chimera Performance</span>
+                        <span class="text-sm text-brand-text">{{ chimera_progress|floatformat:1 }}%</span>
+                    </div>
+                    <div class="h-2.5 rounded-full bg-gray-700">
+                        <div class="h-2.5 rounded-full {% if chimera_progress >= 80 %}bg-green-500{% elif chimera_progress >= 60 %}bg-yellow-500{% elif chimera_progress >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
+                             style="width: {{ chimera_progress }}%"></div>
+                    </div>
+                    <p class="text-xs text-brand-text-muted">Based on average placement (1st = 100%)</p>
+                </div>
+
+                <!-- Siege Performance -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm font-medium text-brand-text-muted">Siege Performance</span>
+                        <span class="text-sm text-brand-text">{{ siege_performance }}%</span>
+                    </div>
+                    <div class="h-2.5 rounded-full bg-gray-700">
+                        <div class="h-2.5 rounded-full bg-yellow-500 transition-all duration-500" 
+                             style="width: {{ siege_performance }}%"></div>
+                    </div>
+                    <p class="text-xs text-brand-text-muted">Based on win rate</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- New two-column layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Activities Column -->
+        <div class="space-y-6">
+            {% for activity_type, config in activities_config.items %}
+                <section class="bg-brand-surface rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold text-brand-text">{{ activity_type }} History</h3>
+                        <a href="{% url config.create_url clan.clan_id %}" 
+                           class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Record</span>
+                        </a>
+                    </div>
+
+                    {% if config.records %}
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-400">
+                                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                                    <tr>
+                                        <th class="px-4 py-3">Date</th>
+                                        {% if activity_type == 'CvC' %}
+                                            <th class="px-4 py-3">Opponent</th>
+                                            <th class="px-4 py-3">Tier</th>
+                                            <th class="px-4 py-3">Score</th>
+                                            <th class="px-4 py-3">Opponent Score</th>
+                                            <th class="px-4 py-3">PR</th>
+                                        {% elif activity_type == 'Siege' %}
+                                            <th class="px-4 py-3">Position</th>
+                                            <th class="px-4 py-3">Points</th>
+                                        {% else %}
+                                            <th class="px-4 py-3">Placement</th>
+                                            <th class="px-4 py-3">All Scores</th>
+                                        {% endif %}
+                                        <th class="px-4 py-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in config.records %}
+                                    <tr class="border-b border-gray-700 hover:bg-gray-700/30" 
+                                        id="record-row-{{ record|get_attribute:config.id_field }}"
+                                        data-activity-type="{{ activity_type|lower }}">
+                                        <td class="px-4 py-3">{{ record.date_recorded|date:"M d, Y" }}</td>
+                                        {% if activity_type == 'CvC' %}
+                                            <td class="px-4 py-3">{{ record.opponent }}</td>
+                                            <td class="px-4 py-3">{{ record.tier }}</td>
+                                            <td class="px-4 py-3">{{ record.score|intcomma }}</td>
+                                            <td class="px-4 py-3">{{ record.opponent_score|intcomma }}</td>
+                                            <td class="px-4 py-3">
+                                                {% if record.personal_rewards %}
+                                                    <span class="text-green-500"><i class="fas fa-check"></i></span>
+                                                {% else %}
+                                                    <span class="text-red-500"><i class="fas fa-times"></i></span>
+                                                {% endif %}
+                                            </td>
+                                        {% elif activity_type == 'Siege' %}
+                                            <td class="px-4 py-3">
+                                                {% if record.position == 1 %}
+                                                    <span class="text-green-500 font-medium">W</span>
+                                                {% else %}
+                                                    <span class="text-red-500 font-medium">L</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-4 py-3">{{ record.points|intcomma }}</td>
+                                        {% else %}
+                                            <td class="px-4 py-3">
+                                                {% with total_clans=record.opponent_scores|length %}
+                                                    {% if record.rank == 1 %}
+                                                        <span class="text-yellow-400">🏆 1st of {{ total_clans }}</span>
+                                                    {% elif record.rank == 2 %}
+                                                        <span class="text-gray-400">🥈 2nd of {{ total_clans }}</span>
+                                                    {% elif record.rank == 3 %}
+                                                        <span class="text-amber-600">🥉 3rd of {{ total_clans }}</span>
+                                                    {% else %}
+                                                        <span class="text-brand-text-muted">
+                                                            {{ record.rank }}{% if total_clans > 0 %} of {{ total_clans }}{% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="text-sm text-brand-text-muted">
+                                                    {% for clan_name, clan_score in record.opponent_scores.items %}
+                                                        <div class="{% if clan_name == clan.name %}text-brand-primary font-medium{% endif %}">
+                                                            {{ clan_name }}: {{ clan_score|floatformat:3 }}B
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                        {% endif %}
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center space-x-3">
+                                                <a href="{% url config.edit_url record|get_attribute:config.id_field %}" 
+                                                   class="text-yellow-500 hover:text-yellow-400">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button"
+                                                        onclick="deleteRecord('{{ activity_type|lower }}', '{{ record|get_attribute:config.id_field }}')"
+                                                        class="text-red-500 hover:text-red-400">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-400 text-center py-4">No {{ activity_type }} records yet.</p>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        </div>
+
+        <!-- Players Column -->
+        <div>
+            <section class="bg-brand-surface rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-brand-text">Players ({{ clan.players.count }})</h2>
+                    <a href="{% url 'clan_edit' clan.clan_id %}?tab=players" 
+                       class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Manage Players</span>
+                    </a>
+                </div>
+
+                {% if clan.players.all %}
+                    <div id="players-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {% for player in clan.players.all|slice:":10" %}
+                            <div class="bg-gray-700/30 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
+                                <div class="flex justify-between items-start mb-2">
+                                    <a href="{% url 'player_detail' player.uuid %}" 
+                                       class="text-brand-primary hover:underline font-medium">
+                                        {{ player.name }}
+                                    </a>
+                                    <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">
+                                        Level {{ player.level }}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-brand-text-muted">
+                                    <p>Power: {{ player.player_power|floatformat:2 }}</p>
+                                    <p class="truncate text-xs" title="{{ player.player_id_ingame }}">
+                                        ID: {{ player.player_id_ingame }}
+                                    </p>
+                                    <p>Discord ID: {{ player.discord_id}}</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if clan.players.count > 10 %}
+                        <div class="text-center mt-6">
+                            <button id="load-more-players" 
+                                    class="bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-lg inline-flex items-center space-x-2"
+                                    data-offset="10"
+                                    onclick="loadMorePlayers()">
+                                <span>Load More</span>
+                                <i class="fas fa-chevron-down ml-2"></i>
+                            </button>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="text-brand-text-muted text-center py-4">No players in this clan yet.</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    {% csrf_token %}
+</div>
+
+<script>
+async function deleteRecord(activityType, recordId) {
+    console.log('Deleting record:', activityType, recordId);
+
+    if (!confirm('Are you sure you want to delete this record?')) {
+        return;
+    }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    try {
+        const url = `/api/activities/${activityType}/${recordId}/`;
+        const row = document.getElementById(`record-row-${recordId}`);
+        
+        if (!row) {
+            throw new Error('Row not found in DOM');
+        }
+
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const tbody = row.parentElement;
+            const section = tbody.closest('section');
+            
+            // Remove the row
+            row.remove();
+
+            // If no more rows, show the "No records" message
+            if (!tbody.querySelector('tr')) {
+                const table = tbody.closest('.overflow-x-auto');
+                table.innerHTML = `<p class="text-gray-400 text-center py-4">No ${activityType} records yet.</p>`;
+            }
+        } else {
+            throw new Error(`Server returned ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error deleting record:', error);
+        alert(`Failed to delete record: ${error.message}`);
+    }
+}
+
+async function loadMorePlayers() {
+    const button = document.getElementById('load-more-players');
+    const offset = parseInt(button.dataset.offset);
+    const grid = document.getElementById('players-grid');
+    const clanId = '{{ clan.clan_id }}';
+
+    try {
+        const response = await fetch(`/api/clan/${clanId}/players/?offset=${offset}&limit=10`);
+        const data = await response.json();
+
+        if (data.players.length > 0) {
+            // Add new players to the grid
+            data.players.forEach(player => {
+                const playerCard = `
+                    <div class="bg-gray-700/30 rounded-lg p-4 hover:bg-gray-700/50 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <a href="/player/${player.uuid}/" 
+                               class="text-brand-primary hover:underline font-medium">
+                                ${player.name}
+                            </a>
+                            <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">
+                                Level ${player.level}
+                            </span>
+                        </div>
+                        <div class="text-sm text-brand-text-muted">
+                            <p>Power: ${player.player_power.toFixed(2)}</p>
+                            <p class="truncate text-xs" title="${player.player_id_ingame}">
+                                ID: ${player.player_id_ingame}
+                            </p>
+                            <p>Discord ID: ${player.discord_id || ''}</p>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', playerCard);
+            });
+
+            // Update offset for next load
+            button.dataset.offset = offset + data.players.length;
+
+            // Hide button if no more players
+            if (data.players.length < 10) {
+                button.style.display = 'none';
+            }
+        } else {
+            button.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading more players:', error);
+        alert('Failed to load more players');
+    }
+}
+</script>
+{% endblock %}

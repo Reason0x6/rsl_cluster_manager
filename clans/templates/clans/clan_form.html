@@ -1,0 +1,317 @@
+{% extends "clans/base.html" %}
+{% load form_filters %}
+{% load humanize %}
+
+{% block title %}{{ action }} Clan{% if clan %}: {{ clan.name }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-2xl font-semibold text-white">{{ action }} Clan {% if clan %}: {{ clan.name }}{% endif %}</h2>
+    <p class="text-sm text-gray-400">Fill in the clan details below</p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-4xl">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-6">
+                {% if field.name == 'players' %}
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-sm font-medium text-gray-400">{{ field.label }}</label>
+                            <div class="relative">
+                                <input type="text" 
+                                       id="player-search" 
+                                       placeholder="Search players..."
+                                       class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-64 p-2">
+                                <i class="fas fa-search absolute right-3 top-2.5 text-gray-400"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <!-- Replace the table headers and add data attributes for sorting -->
+                                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                                    <tr>
+                                        <th class="px-4 py-2 w-8">
+                                            
+                                        </th>
+                                        <th class="px-4 py-2 text-left cursor-pointer hover:text-white" data-sort="name">
+                                            Name <i class="fas fa-sort ml-1"></i>
+                                        </th>
+                                        <th class="px-4 py-2 text-right cursor-pointer hover:text-white" data-sort="level">
+                                            Level <i class="fas fa-sort ml-1"></i>
+                                        </th>
+                                        <th class="px-4 py-2 text-right cursor-pointer hover:text-white" data-sort="power">
+                                            Power <i class="fas fa-sort ml-1"></i>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for choice in field.field.queryset %}
+                                    <tr class="border-b border-gray-700 player-row" data-player-name="{{ choice.name|lower }}">
+                                        <td class="px-4 py-2">
+                                            <label class="inline-flex items-center space-x-3">
+                                                <input type="checkbox" 
+                                                       name="{{ field.name }}" 
+                                                       value="{{ choice.pk }}"
+                                                       {% if choice.pk in field.value %}checked{% endif %}>
+                                                <span class="text-sm text-gray-300">{{ choice.name }}</span>
+                                            </label>
+                                        </td>
+                                        <td class="px-4 py-2 text-white">{{ choice.name }}</td>
+                                        <td class="px-4 py-2 text-right text-white">{{ choice.level|default:"--" }}</td>
+                                        <td class="px-4 py-2 text-right text-white">{{ choice.player_power|floatformat:2|default:"--" }}M</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% elif field.name == 'clan_boss_level' %}
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-400 mb-2">{{ field.label }}</label>
+                        <!-- Update clan boss levels section -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {% for value, label in field.field.choices %}
+                                <label class="inline-flex items-center space-x-3">
+                                    <input type="checkbox" 
+                                           name="{{ field.name }}" 
+                                           value="{{ value }}"
+                                           {% if value in field.value %}checked{% endif %}>
+                                    <span class="text-sm text-gray-300">{{ label }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if field.help_text %}
+                            <p class="mt-2 text-xs text-gray-400">{{ field.help_text|safe }}</p>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <p class="mt-2 text-xs text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% else %}
+    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-400 mb-2">
+        {{ field.label }}
+        {% if field.name in 'personal_rewards_cvc_threshold,non_pr_cvc_threshold' %}
+            <span class="text-xs text-gray-500">(points)</span>
+        {% endif %}
+    </label>
+    <div class="relative">
+        {% if field.name == 'personal_rewards_cvc_threshold' or field.name == 'non_pr_cvc_threshold' %}
+            <input type="number" 
+                   name="{{ field.name }}" 
+                   id="{{ field.id_for_label }}"
+                   value="{{ field.value|default:'' }}"
+                   min="0"
+                   step="1000"
+                   class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <span class="text-gray-400 text-sm">pts</span>
+            </div>
+        {% else %}
+            {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+        {% endif %}
+    </div>
+{% endif %}
+                
+                {% if field.help_text %}
+                    <p class="mt-2 text-xs text-gray-400">{{ field.help_text|safe }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="mt-2 text-xs text-red-400">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        
+        <div class="flex items-center space-x-3 mt-8">
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-save"></i>
+                <span>Save {{ action }}</span>
+            </button>
+            <a href="{% if clan %}{% url 'clan_detail' clan.clan_id %}{% else %}{% url 'home' %}{% endif %}" 
+               class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-times"></i>
+                <span>Cancel</span>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Add this right after the search input -->
+<div class="flex">
+    <button type="button" 
+            onclick="openImportModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+        <i class="fas fa-file-import"></i>
+        <span>Import Players</span>
+    </button>
+</div>
+
+<!-- Add this before the closing </div> of your form -->
+<div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-white">Import Players</h3>
+            <button onclick="closeImportModal()" class="text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div class="bg-gray-700/50 p-4 rounded-lg">
+                <p class="text-sm text-gray-300 mb-2">Example JSON format:</p>
+                <pre class="text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
+[
+    {
+        "name": "PlayerName",
+        "player_power": 4.5
+    },
+    ...
+]</pre>
+            </div>
+            <textarea id="jsonInput"
+                      class="w-full h-48 bg-gray-700 border-gray-600 text-white text-sm rounded-lg p-3"
+                      placeholder="Paste your JSON here..."></textarea>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeImportModal()" 
+                        class="px-4 py-2 text-sm text-gray-400 hover:text-white">
+                    Cancel
+                </button>
+                <button onclick="importPlayers()" 
+                        class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    Import Players
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+    document.getElementById('importModal').classList.add('flex');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    document.getElementById('importModal').classList.remove('flex');
+}
+
+async function importPlayers() {
+    try {
+        const jsonData = JSON.parse(document.getElementById('jsonInput').value);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const response = await fetch('/api/players/import/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(jsonData)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(`Successfully imported ${result.imported} players`);
+            window.location.reload();
+        } else {
+            throw new Error('Failed to import players');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to import players. Please check your JSON format.');
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('importModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        closeImportModal();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('player-search');
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:not(#select-all)');
+
+    // Update function to safely handle missing elements
+    function updateSelectAllState() {
+        if (!selectAll) return; // Guard clause if select-all doesn't exist
+        
+        const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
+            const row = cb.closest('tr');
+            // Only include checkbox if it's in a table row and the row is visible
+            return row && row.style.display !== 'none';
+        });
+
+        if (visibleCheckboxes.length === 0) return; // Guard clause if no visible checkboxes
+
+        const allChecked = visibleCheckboxes.every(cb => cb.checked);
+        const someChecked = visibleCheckboxes.some(cb => cb.checked);
+        
+        selectAll.checked = allChecked;
+        selectAll.indeterminate = someChecked && !allChecked;
+    }
+
+    // Safe event binding
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            checkboxes.forEach(checkbox => {
+                const row = checkbox.closest('tr');
+                if (row && row.dataset.playerName) {
+                    row.style.display = row.dataset.playerName.toLowerCase().includes(searchTerm) ? '' : 'none';
+                }
+            });
+            updateSelectAllState();
+        });
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function(e) {
+            const visibleCheckboxes = Array.from(checkboxes).filter(cb => {
+                const row = cb.closest('tr');
+                return row && row.style.display !== 'none';
+            });
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+    }
+
+    // Initialize select-all state on page load
+    function initializeForm() {
+        // Update the select-all checkbox state based on initial selections
+        updateSelectAllState();
+
+        // Highlight rows of selected players
+        checkboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (row && checkbox.checked) {
+                row.classList.add('bg-gray-700/30');
+            }
+        });
+    }
+
+    // Add row highlighting on checkbox change
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const row = this.closest('tr');
+            if (row) {
+                row.classList.toggle('bg-gray-700/30', this.checked);
+            }
+            updateSelectAllState();
+        });
+    });
+
+    // Call initialization
+    initializeForm();
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectAllState);
+    });
+});
+</script>
+{% endblock %}

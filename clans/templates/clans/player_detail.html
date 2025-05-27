@@ -1,0 +1,251 @@
+{% extends "clans/base.html" %}
+{% load humanize %}
+
+{% block title %}{{ player.name }} - Player Details{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Player Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div>
+            <h1 class="text-3xl font-semibold text-white mb-2">{{ player.name }}</h1>
+            <p class="text-sm text-gray-400">Player ID: {{ player.player_id_ingame }}</p>
+        </div>
+        <a href="{% url 'player_edit' uuid=player.uuid %}" 
+           class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+            <i class="fas fa-edit"></i>
+            <span>Edit Player</span>
+        </a>
+    </div>
+
+    <!-- Player Stats Card -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Player Statistics</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-700/50 p-4 rounded-lg">
+                    <span class="text-sm text-gray-400">Player Power</span>
+                    <p class="text-2xl font-bold text-white">{{ player.player_power|floatformat:3 }}M</p>
+                </div>
+                <div class="bg-gray-700/50 p-4 rounded-lg">
+                    <span class="text-sm text-gray-400">Discord ID</span>
+                    <p class="text-lg font-medium text-white">{{ player.discord_id|default:"Not Set" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Clan Card -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Current Clan</h2>
+            {% with current_clan=player.clans.first %}
+            {% if current_clan %}
+            <div class="bg-gray-700/50 p-4 rounded-lg">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <a href="{% url 'clan_detail' current_clan.clan_id %}" 
+                           class="text-xl font-semibold text-purple-400 hover:text-purple-300">
+                            {{ current_clan.name }}
+                        </a>
+                        <p class="text-sm text-gray-400 mt-1">Level {{ current_clan.clan_level }}</p>
+                        <p class="text-sm text-gray-400">Boss: {{ current_clan.get_boss_levels_display }}</p>
+                    </div>
+                    <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
+                        {{ current_clan.players.count }} Members
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gray-700/50 p-4 rounded-lg text-center">
+                <p class="text-gray-400">Not currently in a clan</p>
+                <a href="{% url 'clan_create' %}" 
+                   class="text-purple-400 hover:text-purple-300 text-sm mt-2 inline-block">
+                    Add to a clan
+                </a>
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <!-- Team Types -->
+    <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-white">Siege Condition Teams</h2>
+            <button id="editTeamsBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Manage Teams</span>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {% for team in player.team_types.all %}
+            <div class="bg-gray-700/50 p-3 rounded-lg flex items-center justify-between">
+                <span class="text-sm text-white">{{ team.get_name_display }}</span>
+                <button class="text-gray-400 hover:text-red-400 transition-colors" 
+                        onclick="removeTeam('{{ team.id }}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center text-gray-400 py-4">
+                No teams assigned yet
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Team Assignment Modal -->
+        <div id="teamModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-gray-800 rounded-xl p-6 max-w-lg w-full mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-white">Manage Teams</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Search and Select All -->
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="relative flex-1">
+                        <input type="text" 
+                               id="teamSearch" 
+                               placeholder="Search teams..." 
+                               class="bg-gray-700 text-white text-sm rounded-lg w-full pl-10 pr-3 py-2 focus:ring-1 focus:ring-purple-500">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <label class="flex items-center space-x-2 text-sm text-gray-400">
+                        <input type="checkbox" 
+                               id="selectAll" 
+                               class="form-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500">
+                        <span>Select All</span>
+                    </label>
+                </div>
+
+                <!-- Teams Grid -->
+                <div class="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto py-2">
+                    {% for team_type in all_team_types %}
+                    <label class="team-row flex items-center p-3 bg-gray-700/50 rounded-lg cursor-pointer hover:bg-gray-600/50 transition-colors {% if team_type in player.team_types.all %}bg-purple-600/20{% endif %}">
+                        <input type="checkbox" 
+                               name="team_types" 
+                               value="{{ team_type.id }}"
+                               {% if team_type in player.team_types.all %}checked{% endif %}
+                               class="form-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500"
+                               onchange="toggleTeam(this)">
+                        <span class="text-sm text-white ml-3">{{ team_type.get_name_display }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end mt-6 space-x-3">
+                    <button onclick="closeModal()" 
+                            class="bg-gray-700 hover:bg-gray-600 text-white text-sm py-2 px-4 rounded-lg">
+                        Cancel
+                    </button>
+                    <button onclick="saveTeams()" 
+                            class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        document.getElementById('editTeamsBtn').addEventListener('click', openModal);
+
+        // Add search functionality
+        document.getElementById('teamSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const teamRows = document.querySelectorAll('.team-row');
+            
+            teamRows.forEach(row => {
+                const teamName = row.querySelector('span').textContent.toLowerCase();
+                if (teamName.includes(searchTerm)) {
+                    row.style.display = 'flex';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Improve toggle team visual feedback
+        function toggleTeam(checkbox) {
+            const teamRow = checkbox.closest('.team-row');
+            if (checkbox.checked) {
+                teamRow.classList.add('bg-purple-600/20');
+            } else {
+                teamRow.classList.remove('bg-purple-600/20');
+            }
+        }
+
+        async function saveTeams() {
+            const selectedTeams = Array.from(document.querySelectorAll('input[name="team_types"]:checked'))
+                .map(cb => cb.value);
+            
+            try {
+                const response = await fetch(`/api/players/{{ player.uuid }}/teams/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ team_types: selectedTeams })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Failed to save teams');
+                }
+            } catch (error) {
+                console.error('Error saving teams:', error);
+                alert('Failed to save teams. Please try again.');
+            }
+        }
+
+        async function removeTeam(teamId) {
+            if (!confirm('Are you sure you want to remove this team?')) return;
+            
+            try {
+                const response = await fetch(`/api/players/{{ player.uuid }}/teams/${teamId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Failed to remove team');
+                }
+            } catch (error) {
+                console.error('Error removing team:', error);
+                alert('Failed to remove team. Please try again.');
+            }
+        }
+
+        // Select All functionality
+        document.getElementById('selectAll').addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('input[name="team_types"]:not([disabled])');
+            const visibleCheckboxes = Array.from(checkboxes).filter(cb => 
+                cb.closest('.team-row').style.display !== 'none'
+            );
+            
+            const allChecked = visibleCheckboxes.every(cb => cb.checked);
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+                toggleTeam(checkbox);
+            });
+        });
+    </script>
+</div>
+{% endblock %}
