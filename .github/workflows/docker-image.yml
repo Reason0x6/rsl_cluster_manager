@@ -1,0 +1,25 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build -t rsl_clan_manager .
+    - name: compress image
+      run: docker save -o rsl_clan_manager.tar rsl_clan_manager
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rsl_clan_manager.tar # The name of the artifact in GitHub
+        path: rsl_clan_manager.tar # The path to the file or directory to upload
