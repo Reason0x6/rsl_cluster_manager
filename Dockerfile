@@ -1,34 +1,17 @@
-FROM python:3.11-slim
+# Use a base image (e.g., Python if your app is Python-based)
+FROM python:3.10-slim
 
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y netcat-openbsd \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-# Set work directory and create it
+# Set the working directory in the container
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt /app/
+# Copy the project files into the container
+COPY . /app
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create required directories
-RUN mkdir -p /app/static /app/media
+# Expose the port your app runs on (adjust as needed)
+EXPOSE 8000
 
-# Copy the entire project
-COPY manage.py /app/
-COPY raid_clan_manager /app/raid_clan_manager/
-COPY clans /app/clans/
-COPY docker/entrypoint.sh /app/entrypoint.sh
-
-# Set proper permissions
-RUN chmod +x /app/entrypoint.sh \
-    && chown -R www-data:www-data /app
-
-USER www-data
-
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Define the command to run your app
+CMD ["python", "app.py"]
