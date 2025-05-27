@@ -15,13 +15,23 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entrypoint script
-COPY entrypoint.sh /app/
-RUN chmod +x /app/entrypoint.sh && \
-    sed -i 's/\r$//g' /app/entrypoint.sh
+# Create and set up the entrypoint script directly in the Dockerfile
+RUN echo '#!/bin/bash\n\
+echo "Waiting for PostgreSQL..."\n\
+while ! nc -z db 5432; do\n\
+    sleep 0.1\n\
+done\n\
+echo "PostgreSQL started"\n\
+\n\
+echo "Running migrations..."\n\
+python manage.py migrate\n\
+\n\
+echo "Starting server..."\n\
+python manage.py runserver 0.0.0.0:8000' > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh
 
 # Copy project
 COPY . .
 
 # Set entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
