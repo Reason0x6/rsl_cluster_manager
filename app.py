@@ -16,5 +16,7 @@ def main():
 
 if __name__ == '__main__':
     # Start the Django development server
+    
+    sys.argv = ['manage.py', 'migrate']
     sys.argv = ['manage.py', 'runserver', '0.0.0.0:8000']
     main()

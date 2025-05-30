@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-me' # IMPORTANT: Chang
 DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.1.215', '127.0.0.1', 'localhost', 'manager.vk2fgav.com']
-CSRF_TRUSTED_ORIGINS = ['https://*.vk2fgav.com','https://*.127.0.0.1', '*localhost*']
+CSRF_TRUSTED_ORIGINS = ['https://*.vk2fgav.com','https://*.127.0.0.1', 'https://*localhost*']
 
 # Application definition
 
