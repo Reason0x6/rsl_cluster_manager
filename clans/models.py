@@ -142,10 +142,20 @@ class Siege(models.Model):
         help_text="Total points earned in the Siege",
         default=0
     )
+    opponent_clan = models.CharField(
+        max_length=100,
+        help_text="Name of the opponent clan",
+        blank=True,
+        null=True
+    )
+    opponent_score = models.PositiveIntegerField(
+        help_text="Score of the opponent clan",
+        default=0
+    )
     result = models.CharField(
         max_length=10, 
         choices=[('win', 'Win'), ('loss', 'Loss')],
-        default='loss'  # Adding default value
+        default='loss'
     )
     date_recorded = models.DateTimeField(
         default=timezone.now,
@@ -156,7 +166,7 @@ class Siege(models.Model):
         ordering = ['-date_recorded']
 
     def __str__(self):
-        return f"Siege: {self.clan.name} - Position {self.position} ({self.date_recorded.strftime('%Y-%m-%d')})"
+        return f"Siege: {self.clan.name} vs {self.opponent_clan} - Position {self.position} ({self.date_recorded.strftime('%Y-%m-%d')})"
 
 class HydraClash(models.Model):
     hydra_clash_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

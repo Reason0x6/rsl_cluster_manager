@@ -40,7 +40,7 @@ class CvCForm(forms.ModelForm):
 class SiegeForm(forms.ModelForm):
     class Meta:
         model = Siege
-        fields = ['position', 'points', 'date_recorded']
+        fields = ['position', 'points', 'opponent_clan', 'opponent_score', 'date_recorded']
         widgets = {
             'date_recorded': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }

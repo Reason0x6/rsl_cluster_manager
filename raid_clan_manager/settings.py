@@ -14,8 +14,8 @@ SECRET_KEY = 'django-insecure-your-secret-key-here-change-me' # IMPORTANT: Chang
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.215', 'localhost',]
-
+ALLOWED_HOSTS = ['192.168.1.215', '127.0.0.1', 'localhost', 'manager.vk2fgav.com']
+CSRF_TRUSTED_ORIGINS = ['https://*.vk2fgav.com','https://*.127.0.0.1', '*localhost*']
 
 # Application definition
 
@@ -68,7 +68,7 @@ WSGI_APPLICATION = 'raid_clan_manager.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db' / 'db.sqlite3',
     }
 }
 
