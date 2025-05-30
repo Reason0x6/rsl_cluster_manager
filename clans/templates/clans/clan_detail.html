@@ -148,6 +148,8 @@
                                         {% elif activity_type == 'Siege' %}
                                             <th class="px-4 py-3">Position</th>
                                             <th class="px-4 py-3">Points</th>
+                                            <th class="px-4 py-3">Opponent</th>
+                                            <th class="px-4 py-3">Opponent Score</th>
                                         {% else %}
                                             <th class="px-4 py-3">Placement</th>
                                             <th class="px-4 py-3">All Scores</th>
@@ -182,6 +184,8 @@
                                                 {% endif %}
                                             </td>
                                             <td class="px-4 py-3">{{ record.points|intcomma }}</td>
+                                             <td class="px-4 py-3">{{ record.opponent_clan }}</td>
+                                             <td class="px-4 py-3">{{ record.opponent_score|intcomma }}</td>
                                         {% else %}
                                             <td class="px-4 py-3">
                                                 {% with total_clans=record.opponent_scores|length %}
