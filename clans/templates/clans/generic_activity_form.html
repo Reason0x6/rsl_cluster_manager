@@ -197,7 +197,11 @@
                 <label for="war_date" class="block text-sm font-medium text-gray-400 mb-2">War Date</label>
                 <input type="date" id="war_date" name="war_date" 
                        class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2.5"
-                       value="{{ activity_instance.war_date|date:'Y-m-d' if activity_instance else '' }}">
+                       {% if activity_instance %}
+                           value="{{ activity_instance.war_date|date:'Y-m-d' }}"
+                       {% else %}
+                           value=""
+                       {% endif %}>
             </div>
         
         <div class="mb-6">
