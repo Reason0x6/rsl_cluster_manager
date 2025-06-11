@@ -297,7 +297,7 @@ async function saveBattle(e) {
     const method = battleId ? 'PUT' : 'POST';
     const url = battleId 
         ? `/api/la-battles/${battleId}/`
-        : `/api/players/${selectedPlayerId}/la-battles/`;
+        : `/api/player/${selectedPlayerId}/la-battles/`;
 
     try {
         const response = await fetch(url, {

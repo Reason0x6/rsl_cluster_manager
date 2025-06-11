@@ -38,7 +38,7 @@ urlpatterns = [
     path('player/<uuid:player_uuid>/teams/<int:team_id>/', views.manage_player_teams, name='remove_player_team'),
 
     # Import players API
-    path('api/players/import/', views.import_players, name='import_players'),
+    path('api/player/import/', views.import_players, name='import_players'),
 
     # Get players in a clan
     path('api/clan/<uuid:clan_id>/players/', views.get_clan_players, name='get_clan_players'),
@@ -47,6 +47,6 @@ urlpatterns = [
     path('la-tracker/', views.la_tracker, name='la_tracker'),
 
     # LA Battle API endpoints
-    path('api/players/<uuid:player_id>/la-battles/', views.la_battle_create, name='la_battle_create'),
+    path('api/player/<uuid:player_id>/la-battles/', views.la_battle_create, name='la_battle_create'),
     path('api/la-battles/<uuid:battle_id>/', views.la_battle_detail, name='la_battle_detail'),
 ]

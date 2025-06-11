@@ -202,7 +202,7 @@ async function importPlayers() {
         const jsonData = JSON.parse(document.getElementById('jsonInput').value);
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        const response = await fetch('/api/players/import/', {
+        const response = await fetch('/api/player/import/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
