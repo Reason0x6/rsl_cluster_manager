@@ -3,29 +3,35 @@ from django.db import models
 from django.utils import timezone # For potential date fields
 from django.core.validators import MinValueValidator, MaxValueValidator
 import json
+from django.contrib.postgres.fields import JSONField  # For storing JSON data
 
 class Player(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    level = models.PositiveIntegerField(
-        default=1,
-        help_text="Player's current level (1-100)"
-    )
-    hh_optimiser_link = models.URLField(blank=True, null=True)
+    level = models.IntegerField(null=True, blank=True)
+    hh_optimiser_link = models.URLField(null=True, blank=True)
     player_power = models.DecimalField(
-        max_digits=8,  # Allows numbers up to 99.999999 million
-        decimal_places=6,
+        max_digits=10,  # Allows numbers up to 99.999999 million
+        decimal_places=2,
         null=True,
         blank=True,
         help_text="Enter player power in millions (e.g., 4.5 for 4.5M)"
     )
     player_id_ingame = models.CharField(max_length=50, unique=True)
-    discord_id = models.CharField(max_length=50, blank=True, null=True)
+    discord_id = models.CharField(max_length=100, null=True, blank=True)
+    clan = models.ForeignKey(
+        'Clan',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='player_clan'  # Updated related_name
+    )
     team_types = models.ManyToManyField('TeamType', related_name='players', blank=True)
+
     current_points = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.name} ({self.player_id_ingame})"
+        return self.name
 
 class Clan(models.Model):
     CLAN_BOSS_LEVELS = [
@@ -285,6 +291,17 @@ class TeamType(models.Model):
         ('gaellen_pact', 'The Gaellen Pact'),
         ('corrupted', 'The Corrupted'),
         ('nyresan_union', 'The Nyresan Union'),
+        ('void', 'Void'),
+        ('spirit', 'Spirit'),
+        ('magic', 'Magic'),
+        ('force', 'Force'),
+        ('support', 'Support'),
+        ('attack', 'Attack'),
+        ('defense', 'Defense'),
+        ('hp', 'HP'),
+        ('legendary', 'Legendary'),
+        ('epic', 'Epic'),
+        ('rare', 'Rare'),
     ]
 
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)
@@ -334,3 +351,21 @@ class LABattle(models.Model):
 
     def __str__(self):
         return f"{self.player.name} vs {self.opponent_name} ({self.points_change:+d}pts)"
+
+class SiegePlan(models.Model):
+    clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='siege_plans')
+    name = models.CharField(max_length=100)
+    plan_data = models.JSONField()  # Updated to use django.db.models.JSONField
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.clan.name})"
+
+class PostAssignment(models.Model):
+    siege_plan = models.ForeignKey(SiegePlan, on_delete=models.CASCADE, related_name='assignments')
+    post_number = models.IntegerField()
+    team_choice = models.CharField(max_length=50, choices=TeamType.TEAM_CHOICES)
+    assigned_player = models.ForeignKey('Player', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Post {self.post_number} - {self.team_choice} ({self.siege_plan.name})"

@@ -1,0 +1,33 @@
+{% extends "clans/base.html" %}
+
+{% block title %}Export Siege Plan{% endblock %}
+
+{% block content %}
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-4xl">
+    <h2 class="text-2xl font-semibold text-white mb-4">Siege Plan: {{ siege_plan.name }}</h2>
+    <table class="w-full text-sm text-left text-gray-400">
+        <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+            <tr>
+                <th class="px-4 py-3">Post</th>
+                <th class="px-4 py-3">Team Choice</th>
+                <th class="px-4 py-3">Assigned Player</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments %}
+            <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                <td class="px-4 py-3">{{ assignment.post_number }}</td>
+                <td class="px-4 py-3">{{ assignment.team_choice }}</td>
+                <td class="px-4 py-3">
+                    {% if assignment.assigned_player %}
+                        {{ assignment.assigned_player.name }}
+                    {% else %}
+                        Unassigned
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

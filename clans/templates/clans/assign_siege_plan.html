@@ -1,0 +1,85 @@
+{% extends "clans/base.html" %}
+
+{% block title %}Assign Siege Plan{% endblock %}
+
+{% block content %}
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-2xl">
+    <h2 class="text-2xl font-semibold text-white mb-4">Assign Siege Plan: {{ siege_plan.name }}</h2>
+    <form method="post" id="post-assignment-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg">
+            Save Assignments
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const teamChoiceFields = document.querySelectorAll('.team-choice');
+        const playerDropdowns = document.querySelectorAll('.player-dropdown');
+
+        // Player data passed from the server
+        const players = {{ player_data|safe }};
+        // Store players by their team types
+        const playersByTeamType = {};
+        players.forEach(player => {
+            player.team_types.forEach(teamType => {
+                if (!playersByTeamType[teamType]) {
+                    playersByTeamType[teamType] = [];
+                }
+                playersByTeamType[teamType].push(player);
+            });
+        });
+
+        // Function to populate a player dropdown
+        function populatePlayerDropdown(dropdown, teamType, selectedPlayer) {
+            dropdown.innerHTML = '<option value="">Select a player</option>'; // Reset dropdown
+
+            if (!teamType) {
+                // If no team type is selected, show all players
+                players.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id; // Use UUID as the value
+                    option.textContent = player.name;
+                    if (player.id === selectedPlayer) {
+                        option.selected = true;
+                    }
+                    dropdown.appendChild(option);
+                });
+            } else if (playersByTeamType[teamType]) {
+                // Show players matching the selected team type
+                const filteredPlayers = playersByTeamType[teamType];
+                filteredPlayers.forEach(player => {
+                    const option = document.createElement('option');
+                    option.value = player.id; // Use UUID as the value
+                    option.textContent = player.name;
+                    if (player.id === selectedPlayer) {
+                        option.selected = true;
+                    }
+                    dropdown.appendChild(option);
+                });
+            }
+        }
+
+        // Initialize player dropdowns on page load
+        teamChoiceFields.forEach(field => {
+            const postNumber = field.dataset.postNumber;
+            const dropdown = document.querySelector(`.player-dropdown[data-post-number="${postNumber}"]`);
+            const selectedTeamType = field.value; // Get the default or pre-selected team type
+            const selectedPlayer = dropdown.dataset.selectedPlayer; // Preselected player
+            populatePlayerDropdown(dropdown, selectedTeamType, selectedPlayer);
+        });
+
+        // Event listener for team choice changes
+        teamChoiceFields.forEach(field => {
+            field.addEventListener('change', function () {
+                const postNumber = this.dataset.postNumber;
+                const dropdown = document.querySelector(`.player-dropdown[data-post-number="${postNumber}"]`);
+                const selectedTeamType = this.value;
+                populatePlayerDropdown(dropdown, selectedTeamType, null);
+            });
+        });
+    });
+</script>
+{% endblock %}

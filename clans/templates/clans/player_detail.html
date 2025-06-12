@@ -191,7 +191,7 @@
                 .map(cb => cb.value);
             
             try {
-                const response = await fetch(`/api/player/{{ player.uuid }}/teams/`, {
+                const response = await fetch(`/player/{{ player.uuid }}/teams/`, { // Corrected URL
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -215,7 +215,7 @@
             if (!confirm('Are you sure you want to remove this team?')) return;
             
             try {
-                const response = await fetch(`/api/player/{{ player.uuid }}/teams/${teamId}/`, {
+                const response = await fetch(`/player/{{ player.uuid }}/teams/${teamId}/`, { // Corrected URL
                     method: 'DELETE',
                     headers: {
                         'X-CSRFToken': '{{ csrf_token }}'

@@ -49,4 +49,9 @@ urlpatterns = [
     # LA Battle API endpoints
     path('api/player/<uuid:player_id>/la-battles/', views.la_battle_create, name='la_battle_create'),
     path('api/la-battles/<uuid:battle_id>/', views.la_battle_detail, name='la_battle_detail'),
+
+    # Siege Plan URLs
+    path('clan/<uuid:clan_id>/siege-plan/create/', views.create_siege_plan, name='create_siege_plan'),
+    path('siege-plan/<int:plan_id>/assign/', views.assign_siege_plan, name='assign_siege_plan'),
+    path('siege-plan/<int:plan_id>/export/', views.export_siege_plan, name='export_siege_plan'),
 ]
