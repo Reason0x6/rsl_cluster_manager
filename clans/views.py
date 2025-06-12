@@ -6,6 +6,7 @@ from .models import Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege
 from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 import json
 from decimal import Decimal
 from django.db.models import Avg, F
@@ -656,18 +657,24 @@ def assign_siege_plan(request, plan_id):
         for player in players
     ]
 
+    # Retrieve saved assignments
+    saved_assignments = {
+        assignment.post_number: {
+            'team_choice': assignment.team_choice,
+            'player': str(assignment.assigned_player.uuid) if assignment.assigned_player else None
+        }
+        for assignment in PostAssignment.objects.filter(siege_plan=siege_plan)
+    }
+
     if request.method == 'POST':
         form = PostAssignmentForm(request.POST, clan=clan, posts=posts)
         if form.is_valid():
-            # Save assignments
-            print(f"Assigning siege plan {siege_plan.id} for clan {clan.clan_id}")
             for post in posts:
                 post_number = post['Post']
                 team_choice = form.cleaned_data[f'post_{post_number}_team_choice']
                 player_uuid = form.cleaned_data[f'post_{post_number}_player']
-                # Ensure the UUID is valid
                 player = Player.objects.get(uuid=player_uuid) if player_uuid else None
-                print(f"Post {post_number}: Team Choice: {team_choice}, Player UUID: {player_uuid}")
+
                 assignment, created = PostAssignment.objects.get_or_create(
                     siege_plan=siege_plan,
                     post_number=post_number,
@@ -678,15 +685,22 @@ def assign_siege_plan(request, plan_id):
 
             return redirect('clan_detail', clan_id=clan.clan_id)
     else:
-        form = PostAssignmentForm(clan=clan, posts=posts)
+        form = PostAssignmentForm(clan=clan, posts=posts, initial=saved_assignments)
 
     return render(request, 'clans/assign_siege_plan.html', {
         'form': form,
         'siege_plan': siege_plan,
         'player_data': json.dumps(player_data),  # Serialize player data as JSON
     })
-
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
     assignments = siege_plan.assignments.all()
     return render(request, 'clans/export_siege_plan.html', {'siege_plan': siege_plan, 'assignments': assignments})
+
+@csrf_exempt
+def delete_siege_plan(request, plan_id):
+    if request.method == 'DELETE':
+        siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+        siege_plan.delete()
+        return JsonResponse({'message': 'Siege plan deleted successfully.'}, status=200)
+    return JsonResponse({'error': 'Invalid request method.'}, status=400)

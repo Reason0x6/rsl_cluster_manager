@@ -192,6 +192,10 @@
                 sidebar.classList.remove('translate-x-0');
             }
         });
+        document.addEventListener('DOMContentLoaded', function () {
+            // Trigger a resize event programmatically
+            window.dispatchEvent(new Event('resize'));
+        });
     </script>
 </body>
 </html>

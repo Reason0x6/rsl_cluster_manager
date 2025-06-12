@@ -1,7 +1,10 @@
+import logging
 from django import forms
 from django.shortcuts import render, get_object_or_404
 from .models import Player, Clan, CvC, Siege, HydraClash, ChimeraClash, TeamType, SiegePlan, PostAssignment
 import json
+import logging
+logger = logging.getLogger(__name__)
 
 class PlayerForm(forms.ModelForm):
     team_types = forms.ModelMultipleChoiceField(
@@ -85,6 +88,10 @@ class PostAssignmentForm(forms.Form):
         initial_data = kwargs.pop('initial', {})
         super().__init__(*args, **kwargs)
 
+        # Get all players in the clan
+        players = Player.objects.filter(clan=clan)
+        player_choices = [(str(player.uuid), player.name) for player in players]
+
         for post in posts:
             post_number = post['Post']
             choices = post['Choices']
@@ -93,21 +100,23 @@ class PostAssignmentForm(forms.Form):
             self.fields[f'post_{post_number}_team_choice'] = forms.ChoiceField(
                 choices=[('', 'Select a team type')] + [(choice, choice.replace('_', ' ').title()) for choice in choices],
                 required=True,
-                initial=initial_data.get(post_number, {}).get('team_choice'),
+                initial=initial_data.get(post_number, {}).get('team_choice'),  # Prepopulate with saved value
                 widget=forms.Select(attrs={
                     'class': 'bg-gray-700 text-white rounded-lg team-choice',
-                    'data-post-number': post_number,  # Add a data attribute for JavaScript
+                    'data-post-number': post_number,
                 })
             )
-
+            logging.debug(f"Post {initial_data} team choices: {choices}")
             # Player Dropdown
             self.fields[f'post_{post_number}_player'] = forms.ChoiceField(
-                choices=[],  # Empty choices; will be populated by JavaScript
+                choices=player_choices,  # Populate with all players in the clan
                 required=False,
-                initial=initial_data.get(post_number, {}).get('player'),
+                initial=initial_data.get(post_number, {}).get('player'),  # Prepopulate with saved value
                 widget=forms.Select(attrs={
                     'class': 'bg-gray-700 text-white rounded-lg player-dropdown',
                     'data-post-number': post_number,
+                    'data-selected-player': initial_data.get(post_number, {}).get('player'),  # Add data-selected-player attribute
+    
                 })
             )
 
@@ -120,57 +129,3 @@ class PostAssignmentForm(forms.Form):
                 for option in field.widget.choices.queryset:
                     team_types = ','.join([team.name for team in option.team_types.all()])
                     field.widget.attrs[f'data-team-types-{option.pk}'] = team_types
-
-def assign_siege_plan(request, plan_id):
-    siege_plan = get_object_or_404(SiegePlan, id=plan_id)
-    clan = siege_plan.clan
-    posts = siege_plan.plan_data
-
-    # Get all players and their team types
-    players = Player.objects.filter(clan=clan).prefetch_related('team_types')
-    player_data = [
-        {
-            'id': str(player.uuid),
-            'name': player.name,
-            'team_types': [team.name for team in player.team_types.all()]
-        }
-        for player in players
-    ]
-
-    # Retrieve saved assignments
-    saved_assignments = {
-        assignment.post_number: {
-            'team_choice': assignment.team_choice,
-            'player': assignment.assigned_player.uuid if assignment.assigned_player else None
-        }
-        for assignment in PostAssignment.objects.filter(siege_plan=siege_plan)
-    }
-
-    if request.method == 'POST':
-        form = PostAssignmentForm(request.POST, clan=clan, posts=posts)
-        if form.is_valid():
-            # Save assignments
-            for post in posts:
-                
-                post_number = post['Post']
-                team_choice = form.cleaned_data[f'post_{post_number}_team_choice']
-                player_uuid = form.cleaned_data[f'post_{post_number}_player']
-                
-                player = Player.objects.get(uuid=player_uuid) if player_uuid else None
-                assignment, created = PostAssignment.objects.get_or_create(
-                    siege_plan=siege_plan,
-                    post_number=post_number,
-                )
-                assignment.team_choice = team_choice
-                assignment.assigned_player = player
-                assignment.save()
-
-            return redirect('clan_detail', clan_id=clan.clan_id)
-    else:
-        form = PostAssignmentForm(clan=clan, posts=posts, initial=saved_assignments)
-
-    return render(request, 'clans/assign_siege_plan.html', {
-        'form': form,
-        'siege_plan': siege_plan,
-        'player_data': json.dumps(player_data),  # Serialize player data as JSON
-    })
