@@ -90,7 +90,6 @@ class PostAssignmentForm(forms.Form):
         # Get all players in the clan
         players = clanObj.players.all()
         player_choices = [(str(player.uuid), player.name) for player in players]      
-        logger.debug(f"{player_choices}")
         for post in posts:
             post_number = post['Post']
             choices = post['Choices']

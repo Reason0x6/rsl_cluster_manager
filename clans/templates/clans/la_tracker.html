@@ -198,13 +198,11 @@ const csrfToken = '{{ csrf_token }}';
 const selectedPlayerId = '{{ selected_player.uuid|default:"" }}';
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up event listeners');
     
     // Player selection handling
     const playerSelect = document.getElementById('player-select');
     if (playerSelect) {
         playerSelect.addEventListener('change', function() {
-            console.log('Player selected:', this.value);
             if (this.value) {
                 window.location.href = `{% url 'la_tracker' %}?player=${this.value}`;
             }
