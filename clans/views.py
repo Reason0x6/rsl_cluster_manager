@@ -646,8 +646,8 @@ def assign_siege_plan(request, plan_id):
     clan = siege_plan.clan
     posts = siege_plan.plan_data
 
-    # Get all players and their team types
-    players = Player.objects.filter(clan=clan).prefetch_related('team_types')
+    clanObj = Clan.objects.get(name=clan)
+    players = clanObj.players.all() 
     player_data = [
         {
             'id': str(player.uuid),

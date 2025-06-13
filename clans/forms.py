@@ -86,11 +86,11 @@ class PostAssignmentForm(forms.Form):
         posts = kwargs.pop('posts')
         initial_data = kwargs.pop('initial', {})
         super().__init__(*args, **kwargs)
-
+        clanObj = Clan.objects.get(name=clan)
         # Get all players in the clan
-        players = Player.objects.filter(clan=clan)
-        player_choices = [(str(player.uuid), player.name) for player in players]
-
+        players = clanObj.players.all()
+        player_choices = [(str(player.uuid), player.name) for player in players]      
+        logger.debug(f"{player_choices}")
         for post in posts:
             post_number = post['Post']
             choices = post['Choices']
