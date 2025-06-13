@@ -175,11 +175,12 @@
                     {% else %}
                         {% if field.field.widget.input_type == "checkbox" %}
                         <label class="inline-flex items-center space-x-3">
+                            <input type="hidden" name="{{ field.name }}" value="false"> <!-- Hidden input for unchecked state -->
                             <input type="checkbox" 
-                                   name="{{ field.name }}" 
-                                   value="{{ value }}"
-                                   {% if value in field.value %}checked{% endif %}>
-                            <span class="text-sm text-gray-300">{{ label }}</span>
+                                name="{{ field.name }}" 
+                                value="true" 
+                                {% if field.value %}checked{% endif %}>
+                            <span class="text-sm text-gray-300">{{ field.label }}</span>
                         </label>
                         {% else %}
                             {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
@@ -211,12 +212,6 @@
                    placeholder="Enter opponent clan name">
         </div>
 {% endif %}
-        <div class="mb-6">
-            <label for="opponent_score" class="block text-sm font-medium text-gray-400 mb-2">Opponent Score</label>
-            <input type="number" id="opponent_score" name="opponent_score" 
-                   class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2.5"
-                   placeholder="Enter opponent score">
-        </div>
 
         <div class="flex items-center space-x-3 mt-8">
             <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">

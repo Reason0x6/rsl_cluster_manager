@@ -38,7 +38,7 @@ class ClanForm(forms.ModelForm):
 class CvCForm(forms.ModelForm):
     class Meta:
         model = CvC
-        exclude = ['clan'] # Clan will be set in the view
+        exclude = ['clan']
 
 class SiegeForm(forms.ModelForm):
     class Meta:
