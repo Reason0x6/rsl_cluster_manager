@@ -272,6 +272,7 @@ class ChimeraClash(models.Model):
 
 class TeamType(models.Model):
     TEAM_CHOICES = [
+        # Factions
         ('banner_lords', 'Banner Lords'),
         ('high_elves', 'High Elves'),
         ('sacred_order', 'Sacred Order'),
@@ -283,27 +284,41 @@ class TeamType(models.Model):
         ('demonspawn', 'Demonspawn'),
         ('undead_hordes', 'Undead Hordes'),
         ('dark_elves', 'Dark Elves'),
-        ('knight_revenant', 'Knight Revenant'),
+        ('knight_revenant', 'Knights Revenant'),
         ('dwarves', 'Dwarves'),
         ('shadowkin', 'Shadowkin'),
         ('sylvan_watchers', 'Sylvan Watchers'),
-        ('telerian_alliance', 'The Telerian Alliance'),
-        ('gaellen_pact', 'The Gaellen Pact'),
+        
+        # Alliances
+        ('telerian_alliance', 'Telerian League'),
+        ('gaellen_pact', 'Gaellen Pact'),
         ('corrupted', 'The Corrupted'),
-        ('nyresan_union', 'The Nyresan Union'),
+        ('nyresan_union', 'Nyresan Union'),
+
+        # Affinities
         ('void', 'Void'),
         ('spirit', 'Spirit'),
         ('magic', 'Magic'),
         ('force', 'Force'),
+
+        # Roles
         ('support', 'Support'),
-        ('attack', 'Attack'),
-        ('defense', 'Defense'),
+        ('attack', 'ATK'),
+        ('defense', 'DEF'),
         ('hp', 'HP'),
-        ('legendary', 'Legendary'),
-        ('epic', 'Epic'),
-        ('rare', 'Rare'),
-        ('immune_turn_meter', 'Immune to Turn Meter Control'),
-        ('immune_cooldowns', 'Immune to Cooldown Reduction'),
+
+        # Rarities
+        ('legendary', 'Legendary Champions'),
+        ('epic', 'Epic Champions'),
+        ('rare', 'Rare Champions'),
+
+        # Immunities & Special Rules
+        ('immune_turn_meter_reduction', 'Immunity - TM Reduction'),
+        ('immune_turn_meter_boosting', 'Immunity - TM Boosting'),
+        ('immune_cooldowns_increasing', 'Immunity - Ability Cooldown Increasing'),
+        ('immune_cooldowns_decreasing', 'Immunity - Ability Cooldown Decreasing'),
+        ('immune_sheep', 'Immunity - Sheep'),
+        ('no_revive', "Champions Can't Be Revived"),
     ]
 
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)

@@ -95,7 +95,7 @@ class PostAssignmentForm(forms.Form):
             choices = post['Choices']
 
             # Team Choice Dropdown
-            self.fields[f'post_{post_number}_team_choice'] = forms.ChoiceField(
+            self.fields[f'post_{post_number}'] = forms.ChoiceField(
                 choices=[('', 'Select a team type')] + [(choice, choice.replace('_', ' ').title()) for choice in choices],
                 required=False,
                 initial=initial_data.get(post_number, {}).get('team_choice'),  # Prepopulate with saved value

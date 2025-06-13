@@ -671,7 +671,7 @@ def assign_siege_plan(request, plan_id):
         if form.is_valid():
             for post in posts:
                 post_number = post['Post']
-                team_choice = form.cleaned_data[f'post_{post_number}_team_choice']
+                team_choice = form.cleaned_data[f'post_{post_number}']
                 player_uuid = form.cleaned_data[f'post_{post_number}_player']
                 player = Player.objects.get(uuid=player_uuid) if player_uuid else None
 
