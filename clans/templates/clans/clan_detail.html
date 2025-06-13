@@ -335,9 +335,9 @@
                             <td class="px-4 py-3">{{ plan.created_at|date:"M d, Y" }}</td>
                             <td class="px-4 py-3">
                                 <a href="{% url 'assign_siege_plan' plan.id %}" 
-                                   class="text-blue-500 hover:underline">View</a> | 
+                                   class="text-blue-500 hover:underline">Edit</a> | 
                                    <a href="{% url 'export_siege_plan' plan.id %}" 
-                                   class="text-blue-500 hover:underline">Export</a> | 
+                                   class="text-blue-500 hover:underline">View</a> | 
                                    <button type="button" 
                                            class="text-red-500 hover:underline"
                                            onclick="deleteSiegePlan('{{ plan.id }}')">

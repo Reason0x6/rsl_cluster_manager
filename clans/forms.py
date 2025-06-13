@@ -1,7 +1,7 @@
 import logging
 from django import forms
 from django.shortcuts import render, get_object_or_404
-from .models import Player, Clan, CvC, Siege, HydraClash, ChimeraClash, TeamType, SiegePlan, PostAssignment
+from .models import Player, Clan, CvC, Siege, HydraClash, ChimeraClash, TeamType, SiegePlan, PostAssignment, ArenaTeam
 import json
 import logging
 logger = logging.getLogger(__name__)
@@ -126,3 +126,19 @@ class PostAssignmentForm(forms.Form):
                 for option in field.widget.choices.queryset:
                     team_types = ','.join([team.name for team in option.team_types.all()])
                     field.widget.attrs[f'data-team-types-{option.pk}'] = team_types
+
+class ArenaTeamForm(forms.ModelForm):
+    champions = forms.JSONField(widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        player = kwargs.pop('player', None)  # Extract the player instance from kwargs
+        super().__init__(*args, **kwargs)
+        if player:
+            # Limit team_type queryset to the team types assigned to the player
+            self.fields['team_type'].queryset = player.team_types.all()
+
+
+    class Meta:
+        model = ArenaTeam
+        fields = ['team_type', 'champions']
+        

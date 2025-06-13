@@ -322,9 +322,7 @@ TEAM_CHOICES = [
 
 
 class TeamType(models.Model):
-
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)
-    
     def __str__(self):
         return dict(TEAM_CHOICES)[self.name]
 
@@ -389,3 +387,12 @@ class PostAssignment(models.Model):
 
     def __str__(self):
         return f"Post {self.post_number} - {self.team_choice} ({self.siege_plan.name})"
+    
+
+class ArenaTeam(models.Model):
+    team_type = models.ForeignKey('TeamType', on_delete=models.CASCADE, related_name='arena_teams')
+    player = models.ForeignKey('Player', on_delete=models.CASCADE, related_name='arena_teams')
+    champions = models.JSONField(default=list, help_text="List of champion names")
+
+    def __str__(self):
+        return f"{self.team_type} - {self.player.name}"

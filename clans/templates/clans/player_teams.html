@@ -1,0 +1,86 @@
+{% extends "clans/base.html" %}
+{% load form_filters %}
+
+{% block title %}Manage Arena Teams for {{ player.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h2 class="text-2xl font-semibold text-white">Manage Arena Teams for {{ player.name }}</h2>
+    <p class="text-sm text-gray-400">Add or remove arena teams for the player</p>
+</div>
+
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-4xl">
+    <!-- Existing Arena Teams -->
+    <h3 class="text-xl font-semibold text-white mb-4">Existing Arena Teams</h3>
+    <ul class="space-y-4">
+        {% for team in arena_teams %}
+            <li class="bg-gray-700 p-4 rounded-lg shadow">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-lg font-bold text-white">{{ team.team_type }}</p>
+                        <p class="text-sm text-gray-400">Champions:</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            {% for champion in team.champions %}
+                                <div class="bg-gray-600 text-white text-sm py-1 px-2 rounded-lg">{{ champion }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <form method="POST" class="inline-block">
+                        {% csrf_token %}
+                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                        <button type="submit" name="remove_team" class="bg-red-600 hover:bg-red-700 text-white text-sm py-2 px-4 rounded-lg">
+                            Remove
+                        </button>
+                    </form>
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Add New Arena Team -->
+    <h3 class="text-xl font-semibold text-white mt-8 mb-4">Add New Arena Team</h3>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-6">
+            <label for="team_type" class="block text-sm font-medium text-gray-400 mb-2">Team Type</label>
+            {{ form.team_type|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+        </div>
+        <div class="mb-6">
+            <label for="champions" class="block text-sm font-medium text-gray-400 mb-2">Champions</label>
+            <div class="grid grid-cols-4 gap-4" id="champs">
+                <input type="text" name="champion_1" placeholder="Aura Champion" onchange="updateScores()" class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+                <input type="text" name="champion_2" placeholder="Champion 2" onchange="updateScores()" class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+                <input type="text" name="champion_3" placeholder="Champion 3" onchange="updateScores()" class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+                <input type="text" name="champion_4" placeholder="Champion 4" onchange="updateScores()" class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+            </div>
+        </div>
+        <div class="flex items-center space-x-3 mt-8">
+            <button type="submit" name="add_team" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-save"></i>
+                <span>Add Team</span>
+            </button>
+            <a href="{% url 'player_detail' uuid=player.uuid %}" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-times"></i>
+                <span>Return to profile</span>
+            </a>
+        </div>
+        {{form.champions|addclass:"hidden"}}
+    </form>
+</div>
+
+<script>
+    function updateScores() {
+        scores = [];
+        document.querySelectorAll('input[type="text"]').forEach(row => {
+            console.log(row);
+            const name = row.value;
+            if (name) {
+                scores.push(name);
+            }
+        });
+
+        document.querySelector('input[name="champions"]').value = JSON.stringify(scores);
+        console.log(JSON.stringify(scores));
+    }
+    </script>
+{% endblock %}

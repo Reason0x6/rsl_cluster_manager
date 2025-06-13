@@ -36,6 +36,7 @@ urlpatterns = [
     path('player/<uuid:player_uuid>/delete/', views.delete_player, name='delete_player'),
     path('player/<uuid:player_uuid>/teams/', views.manage_player_teams, name='manage_player_teams'),
     path('player/<uuid:player_uuid>/teams/<int:team_id>/', views.manage_player_teams, name='remove_player_team'),
+    path('player/<uuid:player_uuid>/arena-teams/', views.manage_arena_teams, name='manage_arena_teams'),
 
     # Import players API
     path('api/player/import/', views.import_players, name='import_players'),
@@ -55,4 +56,5 @@ urlpatterns = [
     path('siege-plan/<int:plan_id>/assign/', views.assign_siege_plan, name='assign_siege_plan'),
     path('siege-plan/<int:plan_id>/export/', views.export_siege_plan, name='export_siege_plan'),
     path('siege-plan/<int:plan_id>/delete/', views.delete_siege_plan, name='delete_siege_plan'),
+
 ]

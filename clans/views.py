@@ -1,15 +1,18 @@
+import logging
 import django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
-from .models import TEAM_CHOICES, Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
-from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm
+from .models import TEAM_CHOICES, ArenaTeam, Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
+from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 import json
 from decimal import Decimal
 from django.db.models import Avg, F
+
+logger = logging.getLogger(__name__)
 
 def home(request):
     players = Player.objects.all().order_by('name')
@@ -22,8 +25,12 @@ def home(request):
 
 def player_detail(request, uuid):  # Change from player_uuid to uuid
     player = get_object_or_404(Player, uuid=uuid)
+    arena_teams = ArenaTeam.objects.filter(player=player)
+    logger.info(f"{arena_teams}")
+            
     context = {
         'player': player,
+        'arena_teams': arena_teams,
         'all_team_types': TeamType.objects.all().order_by('name')
     }
     return render(request, 'clans/player_detail.html', context)
@@ -345,6 +352,7 @@ def manage_player_teams(request, player_uuid, team_id=None):
             
         elif request.method == "DELETE" and team_id:
             player.team_types.remove(team_id)
+            ArenaTeam.objects.filter(player=player).delete()
             return JsonResponse({'status': 'success'})
             
     except Exception as e:
@@ -718,3 +726,28 @@ def get_team_types_as_json():
     # Use JsonResponse to serialize the list to JSON and return an HTTP response
     # The `safe=False` parameter is required to send a list as the top-level JSON object.
     return json.dumps(team_types_qs)
+
+def manage_arena_teams(request, player_uuid):
+    player = get_object_or_404(Player, uuid=player_uuid)
+    arena_teams = ArenaTeam.objects.filter(player=player)
+    if request.method == 'POST':
+        if 'add_team' in request.POST:
+            form = ArenaTeamForm(request.POST)
+            if form.is_valid():
+                arena_team = form.save(commit=False)
+                arena_team.player = player
+                arena_team.save()
+                logger.info(f"Managing arena teams for player: {arena_team})");
+                return redirect('manage_arena_teams', player_uuid=player.uuid)
+        elif 'remove_team' in request.POST:
+            team_id = request.POST.get('team_id')
+            ArenaTeam.objects.filter(id=team_id, player=player).delete()
+            return redirect('manage_arena_teams', player_uuid=player.uuid)
+
+    form = ArenaTeamForm(player=player)
+    context = {
+        'player': player,
+        'arena_teams': arena_teams,
+        'form': form,
+    }
+    return render(request, 'clans/player_teams.html', context)

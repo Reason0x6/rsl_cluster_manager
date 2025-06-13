@@ -9,8 +9,9 @@
         <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
             <tr>
                 <th class="px-4 py-3">Post</th>
-                <th class="px-4 py-3">Team Choice</th>
+                <th class="px-4 py-3">Condition</th>
                 <th class="px-4 py-3">Assigned Player</th>
+                <th class="px-4 py-3">Team</th>
             </tr>
         </thead>
         <tbody>
@@ -24,6 +25,18 @@
                     {% else %}
                         Unassigned
                     {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                     <select class="bg-gray-700 text-white rounded-lg py-2 px-3 w-full">
+                        <option value="" disabled selected>Select Arena Team</option>
+                        {% for arena_team in assignment.assigned_player.arena_teams.all %}
+                            {% if arena_team.team_type|slugify == assignment.team_choice|slugify %}
+                                <option value="{{ arena_team.id }}">
+                                    Champions: {{ arena_team.champions|join:", " }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
                 </td>
             </tr>
             {% endfor %}
