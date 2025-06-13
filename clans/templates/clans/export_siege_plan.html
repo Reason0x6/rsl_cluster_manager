@@ -32,7 +32,7 @@
                         {% for arena_team in assignment.assigned_player.arena_teams.all %}
                             {% if arena_team.team_type|slugify == assignment.team_choice|slugify %}
                                 <option value="{{ arena_team.id }}">
-                                    Champions: {{ arena_team.champions|join:", " }}
+                                   {{ arena_team.champions|join:", " }}
                                 </option>
                             {% endif %}
                         {% endfor %}
