@@ -33,7 +33,6 @@ class ClanForm(forms.ModelForm):
     def clean_clan_boss_level(self):
         levels = self.cleaned_data['clan_boss_level']
         json_levels = json.dumps(list(levels))  # Convert to list and then to JSON
-        print(f"Saving clan boss levels: {json_levels}")  # Debug print
         return json_levels
 
 class CvCForm(forms.ModelForm):
@@ -99,14 +98,13 @@ class PostAssignmentForm(forms.Form):
             # Team Choice Dropdown
             self.fields[f'post_{post_number}_team_choice'] = forms.ChoiceField(
                 choices=[('', 'Select a team type')] + [(choice, choice.replace('_', ' ').title()) for choice in choices],
-                required=True,
+                required=False,
                 initial=initial_data.get(post_number, {}).get('team_choice'),  # Prepopulate with saved value
                 widget=forms.Select(attrs={
                     'class': 'bg-gray-700 text-white rounded-lg team-choice',
                     'data-post-number': post_number,
                 })
             )
-            logging.debug(f"Post {initial_data} team choices: {choices}")
             # Player Dropdown
             self.fields[f'post_{post_number}_player'] = forms.ChoiceField(
                 choices=player_choices,  # Populate with all players in the clan

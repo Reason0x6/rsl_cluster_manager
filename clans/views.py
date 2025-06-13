@@ -660,7 +660,7 @@ def assign_siege_plan(request, plan_id):
     # Retrieve saved assignments
     saved_assignments = {
         assignment.post_number: {
-            'team_choice': assignment.team_choice,
+            'team_choice': assignment.team_choice ,
             'player': str(assignment.assigned_player.uuid) if assignment.assigned_player else None
         }
         for assignment in PostAssignment.objects.filter(siege_plan=siege_plan)

@@ -3,12 +3,27 @@
 {% block title %}Assign Siege Plan{% endblock %}
 
 {% block content %}
-<div class="bg-gray-800 p-6 rounded-xl shadow max-w-2xl">
+<div class="bg-gray-800 p-6 rounded-xl shadow max-w-7xl mx-auto">
     <h2 class="text-2xl font-semibold text-white mb-4">Assign Siege Plan: {{ siege_plan.name }}</h2>
     <form method="post" id="post-assignment-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for field in form %}
+            {% if forloop.counter0|divisibleby:2 %}
+            <div class="bg-gray-700 p-4 rounded-lg shadow">
+            {% endif %}
+                <div class="mb-4">
+                    {{ field.label_tag }}
+                    {{ field }}
+                </div>
+            {% if forloop.counter|divisibleby:2 or forloop.last %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg mt-6">
             Save Assignments
         </button>
     </form>
