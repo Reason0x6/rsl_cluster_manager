@@ -302,6 +302,8 @@ class TeamType(models.Model):
         ('legendary', 'Legendary'),
         ('epic', 'Epic'),
         ('rare', 'Rare'),
+        ('immune_turn_meter', 'Immune to Turn Meter Control'),
+        ('immune_cooldowns', 'Immune to Cooldown Reduction'),
     ]
 
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)
