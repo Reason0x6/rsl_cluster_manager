@@ -2,7 +2,7 @@ import django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
-from .models import Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
+from .models import TEAM_CHOICES, Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
 from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -690,7 +690,8 @@ def assign_siege_plan(request, plan_id):
     return render(request, 'clans/assign_siege_plan.html', {
         'form': form,
         'siege_plan': siege_plan,
-        'player_data': json.dumps(player_data),  # Serialize player data as JSON
+        'player_data': json.dumps(player_data), 
+        'team_types': get_team_types_as_json(),  # Serialize list of tupples data as JSON
     })
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
@@ -704,3 +705,16 @@ def delete_siege_plan(request, plan_id):
         siege_plan.delete()
         return JsonResponse({'message': 'Siege plan deleted successfully.'}, status=200)
     return JsonResponse({'error': 'Invalid request method.'}, status=400)
+
+
+
+def get_team_types_as_json():
+    """
+    Retrieves all TeamType objects and returns them as a simple JSON array.
+    """
+    team_types_qs = TEAM_CHOICES  # Get both id and name fields
+
+
+    # Use JsonResponse to serialize the list to JSON and return an HTTP response
+    # The `safe=False` parameter is required to send a list as the top-level JSON object.
+    return json.dumps(team_types_qs)

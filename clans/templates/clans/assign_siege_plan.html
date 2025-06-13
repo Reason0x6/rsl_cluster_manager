@@ -86,6 +86,7 @@
 
         // Player data passed from the server
         const players = {{ player_data|safe }};
+        const teamTypes = {{ team_types|safe }};
         
         // Store players by their team types
         const playersByTeamType = {};
@@ -101,8 +102,8 @@
         // Function to populate a player dropdown
         function populatePlayerDropdown(dropdown, teamType, selectedPlayer) {
             dropdown.innerHTML = '<option value="">Select a player</option>'; // Reset dropdown
-
-            if (!teamType) {
+            let type = teamTypes.find(t => t[0] === teamType || t[1] === teamType);
+            if (!type) {
                 // If no team type is selected, show all players
                 players.forEach(player => {
                     const option = document.createElement('option');
@@ -113,9 +114,9 @@
                     }
                     dropdown.appendChild(option);
                 });
-            } else if (playersByTeamType[teamType]) {
+            } else if (playersByTeamType[type[0]]) {
                 // Show players matching the selected team type
-                const filteredPlayers = playersByTeamType[teamType];
+                const filteredPlayers = playersByTeamType[type[0]];
                 filteredPlayers.forEach(player => {
                     const option = document.createElement('option');
                     option.value = player.id; // Use UUID as the value

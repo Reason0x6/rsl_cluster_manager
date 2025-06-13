@@ -270,61 +270,64 @@ class ChimeraClash(models.Model):
         except Exception:
             return 0
 
+TEAM_CHOICES = [
+    # Factions
+    ('banner_lords', 'Banner Lords'),
+    ('high_elves', 'High Elves'),
+    ('sacred_order', 'Sacred Order'),
+    ('barbarians', 'Barbarians'),
+    ('ogryn_tribes', 'Ogryn Tribes'),
+    ('lizardmen', 'Lizardmen'),
+    ('skinwalkers', 'Skinwalkers'),
+    ('orcs', 'Orcs'),
+    ('demonspawn', 'Demonspawn'),
+    ('undead_hordes', 'Undead Hordes'),
+    ('dark_elves', 'Dark Elves'),
+    ('knight_revenant', 'Knights Revenant'),
+    ('dwarves', 'Dwarves'),
+    ('shadowkin', 'Shadowkin'),
+    ('sylvan_watchers', 'Sylvan Watchers'),
+    
+    # Alliances
+    ('telerian_alliance', 'Telerian League'),
+    ('gaellen_pact', 'Gaellen Pact'),
+    ('corrupted', 'The Corrupted'),
+    ('nyresan_union', 'Nyresan Union'),
+
+    # Affinities
+    ('void', 'Void'),
+    ('spirit', 'Spirit'),
+    ('magic', 'Magic'),
+    ('force', 'Force'),
+
+    # Roles
+    ('support', 'Support'),
+    ('attack', 'ATK'),
+    ('defense', 'DEF'),
+    ('hp', 'HP'),
+
+    # Rarities
+    ('legendary', 'Legendary Champions'),
+    ('epic', 'Epic Champions'),
+    ('rare', 'Rare Champions'),
+
+    # Immunities & Special Rules
+    ('immune_turn_meter_reduction', 'Immunity - TM Reduction'),
+    ('immune_turn_meter_boosting', 'Immunity - TM Boosting'),
+    ('immune_cooldowns_increasing', 'Immunity - Ability Cooldown Increasing'),
+    ('immune_cooldowns_decreasing', 'Immunity - Ability Cooldown Decreasing'),
+    ('immune_sheep', 'Immunity - Sheep'),
+    ('no_revive', "Champions Can't Be Revived"),
+]
+
+
 class TeamType(models.Model):
-    TEAM_CHOICES = [
-        # Factions
-        ('banner_lords', 'Banner Lords'),
-        ('high_elves', 'High Elves'),
-        ('sacred_order', 'Sacred Order'),
-        ('barbarians', 'Barbarians'),
-        ('ogryn_tribes', 'Ogryn Tribes'),
-        ('lizardmen', 'Lizardmen'),
-        ('skinwalkers', 'Skinwalkers'),
-        ('orcs', 'Orcs'),
-        ('demonspawn', 'Demonspawn'),
-        ('undead_hordes', 'Undead Hordes'),
-        ('dark_elves', 'Dark Elves'),
-        ('knight_revenant', 'Knights Revenant'),
-        ('dwarves', 'Dwarves'),
-        ('shadowkin', 'Shadowkin'),
-        ('sylvan_watchers', 'Sylvan Watchers'),
-        
-        # Alliances
-        ('telerian_alliance', 'Telerian League'),
-        ('gaellen_pact', 'Gaellen Pact'),
-        ('corrupted', 'The Corrupted'),
-        ('nyresan_union', 'Nyresan Union'),
-
-        # Affinities
-        ('void', 'Void'),
-        ('spirit', 'Spirit'),
-        ('magic', 'Magic'),
-        ('force', 'Force'),
-
-        # Roles
-        ('support', 'Support'),
-        ('attack', 'ATK'),
-        ('defense', 'DEF'),
-        ('hp', 'HP'),
-
-        # Rarities
-        ('legendary', 'Legendary Champions'),
-        ('epic', 'Epic Champions'),
-        ('rare', 'Rare Champions'),
-
-        # Immunities & Special Rules
-        ('immune_turn_meter_reduction', 'Immunity - TM Reduction'),
-        ('immune_turn_meter_boosting', 'Immunity - TM Boosting'),
-        ('immune_cooldowns_increasing', 'Immunity - Ability Cooldown Increasing'),
-        ('immune_cooldowns_decreasing', 'Immunity - Ability Cooldown Decreasing'),
-        ('immune_sheep', 'Immunity - Sheep'),
-        ('no_revive', "Champions Can't Be Revived"),
-    ]
 
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)
     
     def __str__(self):
-        return dict(self.TEAM_CHOICES)[self.name]
+        return dict(TEAM_CHOICES)[self.name]
+
 
 class CvCRecord(models.Model):
     clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='cvc_records')
@@ -381,7 +384,7 @@ class SiegePlan(models.Model):
 class PostAssignment(models.Model):
     siege_plan = models.ForeignKey(SiegePlan, on_delete=models.CASCADE, related_name='assignments')
     post_number = models.IntegerField()
-    team_choice = models.CharField(max_length=50, choices=TeamType.TEAM_CHOICES)
+    team_choice = models.CharField(max_length=50, choices=TEAM_CHOICES)
     assigned_player = models.ForeignKey('Player', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
