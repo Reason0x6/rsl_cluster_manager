@@ -66,16 +66,19 @@ def clan_detail(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     
     # Calculate CvC Performance (wins vs total)
-    cvc_records = clan.cvc_records.all()
-    if cvc_records.exists():
+    cvc_records = [
+        record for record in get_activities_config(clan)['CvC']['records']
+    ]
+    won_records = [
+        record for record in cvc_records if record.score > record.opponent_score
+    ]
+
+    if cvc_records:
         # Win is when our score is higher than opponent score
-        cvc_wins = cvc_records.filter(score__gt=F('opponent_score')).count()
-
-
-        total_matches = cvc_records.count()
-        cvc_performance = (Decimal(str(cvc_wins)) / Decimal(str(total_matches))) * 100
+        cvc_performance = (len(won_records) / len(cvc_records)) * 100
     else:
         cvc_performance = Decimal('0')
+
 
     # Calculate Siege Performance (position 1 = win)
     siege_records = clan.siege_records.all()
