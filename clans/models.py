@@ -71,7 +71,7 @@ class Player(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='players'
+        related_name='player_set'  # Changed from 'players' to 'player_set' to avoid clash
     )
 
     def __str__(self):

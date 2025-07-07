@@ -16,14 +16,14 @@ def main():
 
 if __name__ == '__main__':
     
-    # Run SQL Migrations
     sys.argv = ['manage.py', 'migrate']
     main()
 
-        # Run SQL Migrations
     sys.argv = ['manage.py', 'create_team_types']
     main()
 
-    # Start the Django development server
+    sys.argv = ['manage.py', 'remove_orphaned_team_types']
+    main()
+
     sys.argv = ['manage.py', 'runserver', '0.0.0.0:8000']
     main()
