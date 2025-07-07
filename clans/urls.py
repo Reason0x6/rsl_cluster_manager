@@ -57,4 +57,8 @@ urlpatterns = [
     path('siege-plan/<int:plan_id>/export/', views.export_siege_plan, name='export_siege_plan'),
     path('siege-plan/<int:plan_id>/delete/', views.delete_siege_plan, name='delete_siege_plan'),
 
+    # New URL patterns
+    path('manage/', views.manage_clans, name='manage_clans'),
+    path('update_player_field/<uuid:player_id>/', views.update_player_field, name='update_player_field'),
+    path('update_player_data/<uuid:player_id>/', views.update_player_data, name='update_player_data'),
 ]

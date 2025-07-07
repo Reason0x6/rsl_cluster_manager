@@ -1,0 +1,141 @@
+{% extends "clans/base.html" %}
+{% block content %}
+<div>
+    <!-- Tabs for clans -->
+    <div class="flex border-b mb-4">
+        {% for clan in clans %}
+            <a href="?clan={{ clan.pk }}" class="px-4 py-2{% if clan == selected_clan %} border-b-2 border-blue-500 font-bold{% endif %}">
+                {{ clan.name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Player management table -->
+    <div class="overflow-x-auto">
+    <form id="player-management-table">
+        <table class="min-w-full bg-gray-800 text-xs border border-gray-600">
+            <thead class="bg-gray-900 sticky top-0 z-10">
+                <tr>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Name</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Player Power (M)</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[80px]">Hydra Clash Score (B)</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Hydra Difficulty</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Chimera Clash Score (B)</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Chimera Difficulty</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Siege</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Activity</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Dependability</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Optimiser Link</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Development Notes</th>
+                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Clan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr data-player-id="{{ player.pk }}" >
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="text" name="name" value="{{ player.name }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="number" step="0.01" name="player_power" value="{{ player.player_power }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:50px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="number" step="0.001" name="hydra_clash_score" value="{{ player.hydra_clash_score }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="hydra_difficulty_multi" multiple class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;">
+                            <option value="NM" {% if 'NM' in player.hydra_difficulty_multi %}selected{% endif %}>NM</option>
+                            <option value="B" {% if 'B' in player.hydra_difficulty_multi %}selected{% endif %}>B</option>
+                            <option value="H" {% if 'H' in player.hydra_difficulty_multi %}selected{% endif %}>H</option>
+                        </select>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="number" step="0.001" name="chimera_clash_score" value="{{ player.chimera_clash_score }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="chimera_difficulty_multi" multiple class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;">
+                            <option value="UNM" {% if 'UNM' in player.chimera_difficulty_multi %}selected{% endif %}>UNM</option>
+                            <option value="NM" {% if 'NM' in player.chimera_difficulty_multi %}selected{% endif %}>NM</option>
+                            <option value="B" {% if 'B' in player.chimera_difficulty_multi %}selected{% endif %}>B</option>
+                            <option value="H" {% if 'H' in player.chimera_difficulty_multi %}selected{% endif %}>H</option>
+                        </select>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="siege" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:50px;">
+                            <option value="">---</option>
+                            <option value="Competitive" {% if player.siege == "Competitive" %}selected{% endif %}>Competitive</option>
+                            <option value="Strong" {% if player.siege == "Strong" %}selected{% endif %}>Strong</option>
+                            <option value="Good" {% if player.siege == "Good" %}selected{% endif %}>Good</option>
+                            <option value="Limited" {% if player.siege == "Limited" %}selected{% endif %}>Limited</option>
+                            <option value="Weak" {% if player.siege == "Weak" %}selected{% endif %}>Weak</option>
+                        </select>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="activity" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:50px;">
+                            <option value="">---</option>
+                            <option value="High" {% if player.activity == "High" %}selected{% endif %}>High</option>
+                            <option value="Medium" {% if player.activity == "Medium" %}selected{% endif %}>Medium</option>
+                            <option value="Low" {% if player.activity == "Low" %}selected{% endif %}>Low</option>
+                        </select>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="dependability" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:50px;">
+                            <option value="">---</option>
+                            <option value="High" {% if player.dependability == "High" %}selected{% endif %}>High</option>
+                            <option value="Medium" {% if player.dependability == "Medium" %}selected{% endif %}>Medium</option>
+                            <option value="Low" {% if player.dependability == "Low" %}selected{% endif %}>Low</option>
+                        </select>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="url" name="hh_optimiser_link" value="{{ player.hh_optimiser_link }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <input type="text" name="development_notes" value="{{ player.development_notes }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
+                    </td>
+                    <td class="px-1 py-0.5 align-middle border-b border-gray-700">
+                        <select name="clan" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;">
+                            {% for clan in clans %}
+                                <option value="{{ clan.pk }}" {% if player.clan_id == clan.pk %}selected{% endif %}>{{ clan.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('#player-management-table input, #player-management-table select').forEach(function(input) {
+    input.addEventListener('change', function() {
+        const row = input.closest('tr');
+        const playerId = row.getAttribute('data-player-id');
+        // Collect all fields in the row
+        const data = {};
+        row.querySelectorAll('input, select').forEach(function(field) {
+            if (field.multiple) {
+                data[field.name] = Array.from(field.selectedOptions).map(o => o.value);
+            } else {
+                data[field.name] = field.value;
+            }
+        });
+        fetch(`/update_player_data/${playerId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(resp => resp.json()).then(data => {
+            if (!data.success) {
+                alert('Save failed!');
+            } else {
+                location.reload(); // Refresh the page after successful save
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

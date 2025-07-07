@@ -46,8 +46,9 @@
                         </p>
                     </div>
                 </div>
-                <div class="bg-gray-700/50 p-4 border-t border-brand-border">
-                     <a href="{% url 'clan_edit' clan.clan_id %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors w-full block text-center">Edit Clan</a>
+                <div class="bg-gray-700/50 p-4 border-t border-brand-border flex gap-2 justify-center">
+                    <a href="{% url 'clan_detail' clan.clan_id %}" class="text-sm text-green-400 hover:text-green-300 font-medium transition-colors px-3 py-1 rounded-lg border border-green-500 bg-green-900/20">View</a>
+                    <a href="{% url 'clan_edit' clan.clan_id %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors px-3 py-1 rounded-lg border border-blue-500 bg-blue-900/20">Edit</a>
                 </div>
             </div>
             {% endfor %}
@@ -86,31 +87,30 @@
             <div class="bg-brand-surface rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col">
                 <!-- Player card content -->
                 <div class="p-6 flex-grow">
+                    <!-- Display Level, Power, and ID as columns in a single row -->
                     <div class="flex justify-between items-start mb-3">
-                        <a href="{% url 'player_detail' player.uuid %}" class="block text-xl font-semibold text-brand-primary hover:underline">{{ player.name }}</a>
+                        <a href="{% url 'player_detail' player.uuid %}" class="block text-base font-semibold text-brand-primary hover:underline">{{ player.name }}</a>
                         {% if player.clan_set.exists %}
-                        <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">
+                        <span class="text-[10px] bg-gray-600 text-gray-200 px-1 py-0.5 rounded-full">
                             {{ player.clan_set.first.name }}
                         </span>
                         {% endif %}
                     </div>
-                    <div class="space-y-2">
-                        <p class="text-sm text-brand-text-muted">
-                            <span class="inline-block w-16">Level:</span>
+                    <div class="flex flex-row gap-2 text-[10px] text-brand-text-muted">
+                        <span class="inline-block w-1/3">
+                            <span class="font-semibold">Level:</span>
                             <span class="font-medium text-gray-300">{{ player.level }}</span>
-                        </p>
-                        <p class="text-sm text-brand-text-muted">
-                            <span class="inline-block w-16">Power:</span>
+                        </span>
+                        <span class="inline-block w-1/3">
+                            <span class="font-semibold">Power:</span>
                             <span class="font-medium text-gray-300">{{ player.player_power|default:"N/A" }}</span>
-                        </p>
-                        <p class="text-xs text-brand-text-muted truncate" title="{{ player.player_id_ingame }}">
-                            <span class="inline-block w-16">ID:</span>
-                            <span class="font-mono">{{ player.player_id_ingame }}</span>
-                        </p>
+                        </span>
+                        
                     </div>
                 </div>
-                <div class="bg-gray-700/50 p-4 border-t border-brand-border">
-                    <a href="{% url 'player_edit' player.uuid %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors w-full block text-center">Edit Player</a>
+                <div class="bg-gray-700/50 p-4 border-t border-brand-border flex gap-2 justify-center">
+                    <a href="{% url 'player_detail' player.uuid %}" class="text-sm text-green-400 hover:text-green-300 font-medium transition-colors px-3 py-1 rounded-lg border border-green-500 bg-green-900/20">View</a>
+                    <a href="{% url 'player_edit' player.uuid %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors px-3 py-1 rounded-lg border border-blue-500 bg-blue-900/20">Edit</a>
                 </div>
             </div>
             {% endfor %}

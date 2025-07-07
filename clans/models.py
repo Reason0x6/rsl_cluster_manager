@@ -8,27 +8,70 @@ from django.contrib.postgres.fields import JSONField  # For storing JSON data
 class Player(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    level = models.IntegerField(null=True, blank=True)
-    hh_optimiser_link = models.URLField(null=True, blank=True)
     player_power = models.DecimalField(
-        max_digits=10,  # Allows numbers up to 99.999999 million
+        max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
         help_text="Enter player power in millions (e.g., 4.5 for 4.5M)"
     )
-    player_id_ingame = models.CharField(max_length=50, unique=True)
-    discord_id = models.CharField(max_length=100, null=True, blank=True)
-    clan = models.ForeignKey(
-        'Clan',
-        on_delete=models.SET_NULL,
+    hydra_clash_score = models.DecimalField(
+        max_digits=7,
+        decimal_places=3,
         null=True,
         blank=True,
-        related_name='player_clan'  # Updated related_name
+        help_text="Hydra Clash score in billions (e.g., 4.5 for 4.5B)"
     )
-    team_types = models.ManyToManyField('TeamType', related_name='players', blank=True)
+    hydra_difficulty = models.CharField(
+        max_length=20,
+        choices=[('NM', 'NM'), ('B', 'B'), ('H', 'H')],
+        blank=True,
+        null=True
+    )
+    hydra_difficulty_multi = models.JSONField(default=list, blank=True)  # For multi-select
 
-    current_points = models.IntegerField(default=0)
+    chimera_clash_score = models.DecimalField(
+        max_digits=7,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Chimera Clash score in billions"
+    )
+    chimera_difficulty = models.CharField(
+        max_length=20,
+        choices=[('UNM', 'UNM'), ('NM', 'NM'), ('B', 'B'), ('H', 'H')],
+        blank=True,
+        null=True
+    )
+    chimera_difficulty_multi = models.JSONField(default=list, blank=True)  # For multi-select
+
+    siege = models.CharField(
+        max_length=20,
+        choices=[('Competitive', 'Competitive'), ('Strong', 'Strong'), ('Good', 'Good'), ('Limited', 'Limited'), ('Weak', 'Weak')],
+        blank=True,
+        null=True
+    )
+    activity = models.CharField(
+        max_length=20,
+        choices=[('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')],
+        blank=True,
+        null=True
+    )
+    dependability = models.CharField(
+        max_length=20,
+        choices=[('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')],
+        blank=True,
+        null=True
+    )
+    hh_optimiser_link = models.URLField(null=True, blank=True)
+    development_notes = models.TextField(blank=True, null=True)
+    team_types = models.ManyToManyField('TeamType', related_name='players', blank=True)
+    clan = models.ForeignKey(
+        'Clan',
+        on_delete=models.CASCADE,
+        related_name='player_set',
+        null=True
+    )
 
     def __str__(self):
         return self.name

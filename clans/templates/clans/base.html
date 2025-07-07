@@ -126,6 +126,10 @@
                     <i class="fas fa-users w-5 h-5"></i>
                     <span>Add Clan</span>
                 </a>
+                <a href="{% url 'manage_clans' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium {% if request.path == '/manage/' %}bg-gray-700 text-white{% else %}text-gray-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-lg">
+                    <i class="fas fa-shield-alt w-5 h-5"></i>
+                    <span>Manage Cluster</span>
+                </a>
                 <a href="{% url 'la_tracker' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium {% if request.path == '/la-tracker/' %}bg-gray-700 text-white{% else %}text-gray-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-lg">
                     <i class="fas fa-shield-alt w-5 h-5"></i>
                     <span>LA Tracker</span>
@@ -166,10 +170,10 @@
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                     <h2 class="text-lg font-semibold text-gray-200 hidden md:block">
-    <a href="{% url 'home' %}" class="hover:text-purple-400 transition-colors">
-        <i class="fas fa-dragon mr-2"></i>Raid Clan Manager
-    </a>
-</h2>
+                        <a href="{% url 'home' %}" class="hover:text-purple-400 transition-colors">
+                            <i class="fas fa-dragon mr-2"></i>Raid Clan Manager
+                        </a>
+                    </h2>
                 </div>
 
                 <div class="flex items-center space-x-4">

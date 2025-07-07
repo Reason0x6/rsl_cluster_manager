@@ -15,7 +15,7 @@ class PlayerForm(forms.ModelForm):
 
     class Meta:
         model = Player
-        fields = ['name', 'player_id_ingame', 'hh_optimiser_link', 'level', 'player_power', 'discord_id', 'team_types']
+        fields = ['name','hh_optimiser_link', 'player_power', 'team_types']
 
 class ClanForm(forms.ModelForm):
     clan_boss_level = forms.MultipleChoiceField(
@@ -141,4 +141,40 @@ class ArenaTeamForm(forms.ModelForm):
     class Meta:
         model = ArenaTeam
         fields = ['team_type', 'champions']
-        
+
+from django import forms
+from .models import Player, TeamType, Clan
+
+class PlayerManagementForm(forms.ModelForm):
+    hydra_difficulty_multi = forms.MultipleChoiceField(
+        choices=[('NM', 'NM'), ('B', 'B'), ('H', 'H')],
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    chimera_difficulty_multi = forms.MultipleChoiceField(
+        choices=[('UNM', 'UNM'), ('NM', 'NM'), ('B', 'B'), ('H', 'H')],
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    team_types = forms.ModelMultipleChoiceField(
+        queryset=TeamType.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+    clan = forms.ModelChoiceField(
+        queryset=Clan.objects.all(),
+        required=False
+    )
+
+    class Meta:
+        model = Player
+        fields = [
+            'name', 'player_power', 'hydra_clash_score', 'hydra_difficulty_multi',
+            'chimera_clash_score', 'chimera_difficulty_multi', 'siege', 'activity',
+            'dependability', 'hh_optimiser_link', 'development_notes', 'team_types', 'clan'
+        ]
+        widgets = {
+            'development_notes': forms.TextInput(attrs={'class': 'form-control'}),
+            'hh_optimiser_link': forms.URLInput(attrs={'class': 'form-control'}),
+        }
+

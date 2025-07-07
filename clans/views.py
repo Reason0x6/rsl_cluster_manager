@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
 from .models import TEAM_CHOICES, ArenaTeam, Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
-from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm
+from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm, PlayerManagementForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -471,7 +471,6 @@ def import_players(request):
                 
             # Create or update player
             player, created = Player.objects.update_or_create(
-                player_id_ingame=name,  # Using name as ingame ID
                 defaults={
                     'name': name,
                     'player_power': player_data.get('player_power', 0)
@@ -504,10 +503,7 @@ def get_clan_players(request, clan_id):
         players_data = [{
             'uuid': str(player.uuid),
             'name': player.name,
-            'level': player.level or 0,
             'player_power': float(player.player_power or 0),
-            'player_id_ingame': player.player_id_ingame or '',
-            'discord_id': player.discord_id or ''
         } for player in players]
         
         return JsonResponse({
@@ -754,3 +750,90 @@ def manage_arena_teams(request, player_uuid):
         'form': form,
     }
     return render(request, 'clans/player_teams.html', context)
+
+def manage_clans(request):
+    clans = Clan.objects.all()
+    selected_clan_id = request.GET.get('clan')
+    selected_clan = get_object_or_404(Clan, pk=selected_clan_id) if selected_clan_id else clans.first()
+    players = selected_clan.players.all() if selected_clan else Player.objects.none()
+
+    context = {
+        'clans': clans,
+        'selected_clan': selected_clan,
+        'players': players,
+        'player_form': PlayerManagementForm(),
+    }
+    return render(request, 'clans/manage_clans.html', context)
+
+# AJAX endpoint for saving player changes
+@csrf_exempt
+def update_player_field(request, player_id):
+    if request.method == 'POST':
+        player = get_object_or_404(Player, pk=player_id)
+        field = request.POST.get('field')
+        value = request.POST.get('value')
+        if field and hasattr(player, field):
+            setattr(player, field, value)
+            player.save()
+            return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
+
+@csrf_exempt
+def update_player_data(request, player_id):
+    if request.method == 'POST':
+        try:
+            player = get_object_or_404(Player, pk=player_id)
+            data = json.loads(request.body)
+
+            updatable_fields = [
+                'name', 'player_power', 'hydra_clash_score', 'hydra_difficulty_multi',
+                'chimera_clash_score', 'chimera_difficulty_multi', 'siege', 'activity',
+                'dependability', 'hh_optimiser_link', 'development_notes', 'clan'
+            ]
+
+            decimal_fields = ['player_power', 'hydra_clash_score', 'chimera_clash_score']
+
+            old_clan = player.clan  # Track the old clan before update
+
+            for field, value in data.items():
+                if field not in updatable_fields:
+                    continue
+                if field in ['hydra_difficulty_multi', 'chimera_difficulty_multi']:
+                    if not isinstance(value, list):
+                        try:
+                            value = json.loads(value)
+                        except Exception:
+                            value = []
+                    setattr(player, field, value)
+                elif field == 'clan':
+                    if value:
+                        from .models import Clan
+                        try:
+                            clan_obj = Clan.objects.get(pk=value)
+                            player.clan = clan_obj
+                        except Clan.DoesNotExist:
+                            player.clan = None
+                    else:
+                        player.clan = None
+                elif field in decimal_fields:
+                    if value == "" or value is None:
+                        setattr(player, field, None)
+                    else:
+                        setattr(player, field, value)
+                else:
+                    setattr(player, field, value)
+            player.save()
+
+            # Synchronize the ManyToMany 'players' field on Clan
+            if 'clan' in data:
+                # Remove from old clan's players if needed
+                if old_clan and old_clan != player.clan:
+                    old_clan.players.remove(player)
+                # Add to new clan's players if not already present
+                if player.clan and not player.clan.players.filter(pk=player.pk).exists():
+                    player.clan.players.add(player)
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    return JsonResponse({'success': False}, status=400)
