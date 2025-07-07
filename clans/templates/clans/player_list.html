@@ -241,19 +241,26 @@ document.querySelectorAll('th').forEach(header => {
     });
 });
 
-async function confirmDelete(playerId, playerName, playerIngameId) {
+async function confirmDelete(playerId, playerName) {
     const input = prompt(
-        `To delete ${playerName}, please enter their in-game name:\n` +
-        `(${playerIngameId})`
+        `To delete ${playerName}, please enter their in-game name:\n`
     );
 
-    if (input === null) return; // User clicked Cancel
-    
-    if (input === playerIngameId) {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
+    if (input === null) return;
+
+    if ((input || '').trim().toLowerCase() === (playerName || '').trim().toLowerCase()) {
+        let csrfToken = '';
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            csrfToken = csrfInput.value;
+        } else {
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            if (match) csrfToken = match[1];
+        }
+
         try {
-            const response = await fetch(`/api/player/${playerId}/`, {
+            // Use the correct DELETE endpoint as per your urls.py
+            const response = await fetch(`/player/${playerId}/delete/`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRFToken': csrfToken,
@@ -262,9 +269,8 @@ async function confirmDelete(playerId, playerName, playerIngameId) {
             });
 
             if (response.ok) {
-                // Remove the row from the table
-                const row = document.querySelector(`button[onclick*="${playerId}"]`).closest('tr');
-                row.remove();
+                const row = document.querySelector(`button[onclick*="'${playerId}'"]`).closest('tr');
+                if (row) row.remove();
             } else {
                 throw new Error('Failed to delete player');
             }
