@@ -503,7 +503,28 @@ def get_activities_config(clan):
 @require_http_methods(["POST"])
 def import_players(request):
     try:
-        data = json.loads(request.body)
+        # Accept both string and already-parsed JSON
+        if isinstance(request.body, bytes):
+            body = request.body.decode('utf-8')
+        else:
+            body = request.body
+        body = body.lstrip('\ufeff').strip()
+        import re
+        # Remove trailing commas before closing brackets/braces
+        body = re.sub(r',(\s*[\]}])', r'\1', body)
+        # Fix typo: "UMN" -> "UNM"
+        body = body.replace('"UMN"', '"UNM"')
+        # Defensive: ensure null is valid in JSON (should be, but just in case)
+        body = body.replace("None", "null")
+        # Try to parse JSON, provide a clear error if it fails
+        try:
+            data = json.loads(body)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Invalid JSON: {str(e)}'
+            }, status=400)
+
         imported_count = 0
         updated_count = 0
 
@@ -512,7 +533,6 @@ def import_players(request):
             if not name:
                 continue
 
-            # Try to find an existing player by name (case-insensitive)
             player = Player.objects.filter(name__iexact=name).first()
             fields_map = {
                 'player_power': player_data.get('Player Power'),
@@ -546,7 +566,7 @@ def import_players(request):
     except Exception as e:
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
+            'message': f'Import error: {str(e)}'
         }, status=400)
 
 # Add this new view function
