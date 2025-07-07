@@ -68,9 +68,10 @@ class Player(models.Model):
     team_types = models.ManyToManyField('TeamType', related_name='players', blank=True)
     clan = models.ForeignKey(
         'Clan',
-        on_delete=models.CASCADE,
-        related_name='player_set',
-        null=True
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='players'
     )
 
     def __str__(self):
@@ -367,8 +368,19 @@ TEAM_CHOICES = [
 class TeamType(models.Model):
     name = models.CharField(max_length=50, choices=TEAM_CHOICES, unique=True)
     def __str__(self):
-        return dict(TEAM_CHOICES)[self.name]
+        # Avoid KeyError for missing choices
+        return dict(TEAM_CHOICES).get(self.name, self.name)
 
+    @classmethod
+    def remove_orphaned_from_players(cls):
+        # Remove team types from players if the TeamType does not exist
+        valid_names = set(cls.objects.values_list('name', flat=True))
+        for player in Player.objects.all():
+            player_team_types = player.team_types.values_list('name', flat=True)
+            to_remove = [tt for tt in player_team_types if tt not in valid_names]
+            if to_remove:
+                player.team_types.remove(*TeamType.objects.filter(name__in=to_remove))
+            
 
 class CvCRecord(models.Model):
     clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='cvc_records')
