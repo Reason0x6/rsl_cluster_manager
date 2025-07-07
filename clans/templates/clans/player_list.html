@@ -25,6 +25,59 @@
                 <i class="fas fa-plus"></i>
                 <span>Add Player</span>
             </a>
+            <!-- Import Players Button -->
+            <button type="button" 
+                    onclick="openImportModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-file-import"></i>
+                <span>Import Players</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-white">Import Players</h3>
+                <button onclick="closeImportModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-gray-700/50 p-4 rounded-lg">
+                    <p class="text-sm text-gray-300 mb-2">Example JSON format:</p>
+                    <pre class="text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
+[
+  {
+    "Name": "PlayerName",
+    "Player Power": 4.5,
+    "Hydra Clash": 1.2,
+    "Hydra Difficulty": ["NM", "B"],
+    "Chimera Clash": 2.3,
+    "Chimera Difficulty": ["UNM", "NM"],
+    "Siege": "Competitive",
+    "Activity": "High",
+    "Dependability": "Medium",
+    "Development?": "Needs gear"
+  }
+]
+</pre>
+                </div>
+                <textarea id="jsonInput"
+                          class="w-full h-48 bg-gray-700 border-gray-600 text-white text-sm rounded-lg p-3"
+                          placeholder="Paste your JSON here..."></textarea>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeImportModal()" 
+                            class="px-4 py-2 text-sm text-gray-400 hover:text-white">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="importPlayers()" 
+                            class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                        Import Players
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -76,6 +129,52 @@
 </div>
 
 <script>
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+    document.getElementById('importModal').classList.add('flex');
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    document.getElementById('importModal').classList.remove('flex');
+}
+
+async function importPlayers() {
+    try {
+        const jsonData = JSON.parse(document.getElementById('jsonInput').value);
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const response = await fetch('/api/player/import/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(jsonData)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            alert(
+                `Successfully imported ${result.imported} player(s), updated ${result.updated} player(s)`
+            );
+            window.location.reload();
+        } else {
+            throw new Error('Failed to import players');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to import players. Please check your JSON format.');
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('importModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        closeImportModal();
+    }
+});
+
 document.getElementById('searchInput').addEventListener('keyup', function() {
     const searchValue = this.value.toLowerCase();
     const rows = document.querySelectorAll('tbody tr');

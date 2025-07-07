@@ -20,22 +20,27 @@ def home(request):
 
     # Prepare histories as lists for each clan (limit to latest 10 per type)
     for clan in clans:
+        # Defensive: always use clan.players.all() for player count, not for history tables
         clan.cvc_history_list = [
             {'date': cvc.date_recorded.strftime('%Y-%m-%d'), 'score': cvc.score}
             for cvc in clan.cvcs.all().order_by('-date_recorded')[:10][::-1]
         ]
+        # Defensive: fallback to empty list if no hydra clashes
+        hydra_qs = clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         clan.hydra_history_list = [
-            {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': hydra.score}
-            for hydra in clan.hydra_clashes.all().order_by('-date_recorded')[:10][::-1]
-        ]
+            {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(hydra, 'score', getattr(hydra, 'get', lambda: 0)())}
+            for hydra in hydra_qs
+        ] if hydra_qs else []
+        chimera_qs = clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         clan.chimera_history_list = [
-            {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': chimera.score}
-            for chimera in clan.chimera_clashes.all().order_by('-date_recorded')[:10][::-1]
-        ]
+            {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(chimera, 'score', getattr(chimera, 'get', lambda: 0)())}
+            for chimera in chimera_qs
+        ] if chimera_qs else []
+        siege_qs = clan.siege_records.all().order_by('-date_recorded')[:10]
         clan.siege_history_list = [
             {'date': siege.date_recorded.strftime('%Y-%m-%d'), 'points': siege.points}
-            for siege in clan.siege_records.all().order_by('-date_recorded')[:10][::-1]
-        ]
+            for siege in siege_qs
+        ] if siege_qs else []
 
     context = {
         'players': players,
@@ -148,7 +153,24 @@ def clan_edit(request, clan_id):
     if request.method == 'POST':
         form = ClanForm(request.POST, instance=clan)
         if form.is_valid():
-            form.save()
+            clan = form.save()
+            selected_players = form.cleaned_data.get('players', [])
+            selected_player_ids = [p.pk for p in selected_players]
+            # Set selected players' .clan and ensure they are only in this clan's players m2m
+            for player in selected_players:
+                if player.clan != clan:
+                    player.clan = clan
+                    player.save(update_fields=['clan'])
+                # Remove player from all other clans' players m2m except this one
+                from .models import Clan as ClanModel
+                other_clans = ClanModel.objects.filter(players=player).exclude(pk=clan.pk)
+                for c in other_clans:
+                    c.players.remove(player)
+            # Remove players not selected from this clan and clear their .clan if needed
+            for player in clan.players.exclude(pk__in=selected_player_ids):
+                player.clan = None
+                player.save(update_fields=['clan'])
+                clan.players.remove(player)
             return redirect('clan_detail', clan_id=clan.clan_id)
     else:
         form = ClanForm(instance=clan)
@@ -483,24 +505,43 @@ def import_players(request):
     try:
         data = json.loads(request.body)
         imported_count = 0
-        
+        updated_count = 0
+
         for player_data in data:
-            name = player_data.get('name')
+            name = player_data.get('Name')
             if not name:
                 continue
-                
-            # Create or update player
-            player, created = Player.objects.update_or_create(
-                defaults={
-                    'name': name,
-                    'player_power': player_data.get('player_power', 0)
-                }
-            )
-            imported_count += 1
-            
+
+            # Try to find an existing player by name (case-insensitive)
+            player = Player.objects.filter(name__iexact=name).first()
+            fields_map = {
+                'player_power': player_data.get('Player Power'),
+                'hydra_clash_score': player_data.get('Hydra Clash'),
+                'hydra_difficulty_multi': player_data.get('Hydra Difficulty') or [],
+                'chimera_clash_score': player_data.get('Chimera Clash'),
+                'chimera_difficulty_multi': player_data.get('Chimera Difficulty') or [],
+                'siege': player_data.get('Siege'),
+                'activity': player_data.get('Activity'),
+                'dependability': player_data.get('Dependability'),
+                'development_notes': player_data.get('Development?'),
+            }
+
+            if player:
+                for field, value in fields_map.items():
+                    setattr(player, field, value)
+                player.save()
+                updated_count += 1
+            else:
+                Player.objects.create(
+                    name=name,
+                    **fields_map
+                )
+                imported_count += 1
+
         return JsonResponse({
             'status': 'success',
-            'imported': imported_count
+            'imported': imported_count,
+            'updated': updated_count
         })
     except Exception as e:
         return JsonResponse({
@@ -852,6 +893,14 @@ def update_player_data(request, player_id):
                 # Add to new clan's players if not already present
                 if player.clan and not player.clan.players.filter(pk=player.pk).exists():
                     player.clan.players.add(player)
+                # Remove player from all other clans' players m2m except the new one
+                from .models import Clan
+                if player.clan:
+                    other_clans = Clan.objects.filter(players=player).exclude(pk=player.clan.pk)
+                else:
+                    other_clans = Clan.objects.filter(players=player)
+                for c in other_clans:
+                    c.players.remove(player)
 
             return JsonResponse({'success': True})
         except Exception as e:
