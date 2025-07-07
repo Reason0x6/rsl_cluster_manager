@@ -46,7 +46,7 @@
                         <p class="text-sm text-gray-400">Boss: {{ current_clan.get_boss_levels_display }}</p>
                     </div>
                     <span class="bg-purple-600 text-white text-xs px-2 py-1 rounded-full">
-                        {{ current_clan.players.count }} Members
+                        {{ current_clan.players.all|length }} Members
                     </span>
                 </div>
             </div>

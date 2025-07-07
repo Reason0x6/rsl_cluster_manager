@@ -16,7 +16,28 @@ logger = logging.getLogger(__name__)
 
 def home(request):
     players = Player.objects.all().order_by('name')
-    clans = Clan.objects.prefetch_related('players').all().order_by('name')
+    clans = Clan.objects.prefetch_related('players', 'cvcs', 'hydra_clashes', 'chimera_clashes', 'siege_records').all().order_by('name')
+
+    # Prepare histories as lists for each clan
+    for clan in clans:
+        # Use a different attribute name to avoid clashing with related_name
+        clan.cvc_history_list = [
+            {'date': cvc.date_recorded.strftime('%Y-%m-%d'), 'score': cvc.score}
+            for cvc in clan.cvcs.all().order_by('date_recorded')
+        ]
+        clan.hydra_history_list = [
+            {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': hydra.score}
+            for hydra in clan.hydra_clashes.all().order_by('date_recorded')
+        ]
+        clan.chimera_history_list = [
+            {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': chimera.score}
+            for chimera in clan.chimera_clashes.all().order_by('date_recorded')
+        ]
+        clan.siege_history_list = [
+            {'date': siege.date_recorded.strftime('%Y-%m-%d'), 'points': siege.points}
+            for siege in clan.siege_records.all().order_by('date_recorded')
+        ]
+
     context = {
         'players': players,
         'clans': clans,
@@ -509,7 +530,7 @@ def get_clan_players(request, clan_id):
         return JsonResponse({
             'status': 'success',
             'players': players_data,
-            'total_count': clan.players.count()
+            'total_count': clan.players.all().length
         })
     except Exception as e:
         return JsonResponse({
@@ -837,3 +858,4 @@ def update_player_data(request, player_id):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     return JsonResponse({'success': False}, status=400)
+
