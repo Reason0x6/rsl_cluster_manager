@@ -141,9 +141,38 @@ function closeImportModal() {
 
 async function importPlayers() {
     try {
-        const jsonData = JSON.parse(document.getElementById('jsonInput').value);
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        // Prevent double submission
+        if (window._importingPlayers) return;
+        window._importingPlayers = true;
 
+        const jsonInput = document.getElementById('jsonInput');
+        const jsonData = JSON.parse(jsonInput.value);
+        // Find CSRF token from cookie or hidden input
+        let csrfToken = '';
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            csrfToken = csrfInput.value;
+        } else {
+            // Try to get from cookie (Django default)
+            const match = document.cookie.match(/csrftoken=([^;]+)/);
+            if (match) csrfToken = match[1];
+        }
+
+        // Debug: show alert if no CSRF token found
+        if (!csrfToken) {
+            alert('CSRF token not found. Please refresh the page.');
+            window._importingPlayers = false;
+            return;
+        }
+
+        // Debug: show alert if jsonData is not an array
+        if (!Array.isArray(jsonData)) {
+            alert('JSON must be an array of player objects.');
+            window._importingPlayers = false;
+            return;
+        }
+
+        // Actually send the request
         const response = await fetch('/api/player/import/', {
             method: 'POST',
             headers: {
@@ -153,6 +182,8 @@ async function importPlayers() {
             body: JSON.stringify(jsonData)
         });
 
+        window._importingPlayers = false;
+
         if (response.ok) {
             const result = await response.json();
             alert(
@@ -160,9 +191,11 @@ async function importPlayers() {
             );
             window.location.reload();
         } else {
-            throw new Error('Failed to import players');
+            const errorText = await response.text();
+            alert('Failed to import players. Server says: ' + errorText);
         }
     } catch (error) {
+        window._importingPlayers = false;
         console.error('Error:', error);
         alert('Failed to import players. Please check your JSON format.');
     }
