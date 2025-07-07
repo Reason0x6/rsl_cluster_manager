@@ -158,35 +158,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for record in config.records %}
-                                    <tr class="border-b border-gray-700 hover:bg-gray-700/30" 
-                                        id="record-row-{{ record|get_attribute:config.id_field }}"
-                                        data-activity-type="{{ activity_type|lower }}">
-                                        <td class="px-4 py-3">{{ record.date_recorded|date:"M d, Y" }}</td>
-                                        {% if activity_type == 'CvC' %}
-                                            <td class="px-4 py-3">{{ record.opponent }}</td>
-                                            <td class="px-4 py-3">{{ record.tier }}</td>
-                                            <td class="px-4 py-3">{{ record.score|intcomma }}</td>
-                                            <td class="px-4 py-3">{{ record.opponent_score|intcomma }}</td>
-                                            <td class="px-4 py-3">
-                                                {% if record.personal_rewards %}
-                                                    <span class="text-green-500"><i class="fas fa-check"></i></span>
-                                                {% else %}
-                                                    <span class="text-red-500"><i class="fas fa-times"></i></span>
-                                                {% endif %}
-                                            </td>
-                                        {% elif activity_type == 'Siege' %}
-                                            <td class="px-4 py-3">
-                                                {% if record.position == 1 %}
-                                                    <span class="text-green-500 font-medium">W</span>
-                                                {% else %}
-                                                    <span class="text-red-500 font-medium">L</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="px-4 py-3">{{ record.points|intcomma }}</td>
-                                             <td class="px-4 py-3">{{ record.opponent_clan }}</td>
-                                             <td class="px-4 py-3">{{ record.opponent_score|intcomma }}</td>
-                                        {% else %}
+                                    {% if activity_type == 'Hydra' or activity_type == 'Chimera' %}
+                                        {% for record in config.records|slice:":3" %}
+                                        <tr class="border-b border-gray-700 hover:bg-gray-700/30" 
+                                            id="record-row-{{ record|get_attribute:config.id_field }}"
+                                            data-activity-type="{{ activity_type|lower }}">
+                                            <td class="px-4 py-3">{{ record.date_recorded|date:"M d, Y" }}</td>
                                             <td class="px-4 py-3">
                                                 {% with total_clans=record.opponent_scores|length %}
                                                     {% if record.rank == 1 %}
@@ -211,22 +188,144 @@
                                                     {% endfor %}
                                                 </div>
                                             </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center space-x-3">
+                                                    <a href="{% url config.edit_url record|get_attribute:config.id_field %}" 
+                                                       class="text-yellow-500 hover:text-yellow-400">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            onclick="deleteRecord('{{ activity_type|lower }}', '{{ record|get_attribute:config.id_field }}')"
+                                                            class="text-red-500 hover:text-red-400">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        {% if config.records|length > 3 %}
+                                        <tr id="show-more-{{ activity_type|lower }}">
+                                            <td colspan="5" class="text-center py-2">
+                                                <button class="bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded" onclick="showAll{{ activity_type }}Records()">Load More</button>
+                                            </td>
+                                        </tr>
                                         {% endif %}
-                                        <td class="px-4 py-3">
-                                            <div class="flex items-center space-x-3">
-                                                <a href="{% url config.edit_url record|get_attribute:config.id_field %}" 
-                                                   class="text-yellow-500 hover:text-yellow-400">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button"
-                                                        onclick="deleteRecord('{{ activity_type|lower }}', '{{ record|get_attribute:config.id_field }}')"
-                                                        class="text-red-500 hover:text-red-400">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                        {% for record in config.records|slice:"3:" %}
+                                        <tr class="border-b border-gray-700 hover:bg-gray-700/30 extra-{{ activity_type|lower }}-record" style="display:none"
+                                            id="record-row-{{ record|get_attribute:config.id_field }}"
+                                            data-activity-type="{{ activity_type|lower }}">
+                                            <td class="px-4 py-3">{{ record.date_recorded|date:"M d, Y" }}</td>
+                                            <td class="px-4 py-3">
+                                                {% with total_clans=record.opponent_scores|length %}
+                                                    {% if record.rank == 1 %}
+                                                        <span class="text-yellow-400">🏆 1st of {{ total_clans }}</span>
+                                                    {% elif record.rank == 2 %}
+                                                        <span class="text-gray-400">🥈 2nd of {{ total_clans }}</span>
+                                                    {% elif record.rank == 3 %}
+                                                        <span class="text-amber-600">🥉 3rd of {{ total_clans }}</span>
+                                                    {% else %}
+                                                        <span class="text-brand-text-muted">
+                                                            {{ record.rank }}{% if total_clans > 0 %} of {{ total_clans }}{% endif %}
+                                                        </span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="text-sm text-brand-text-muted">
+                                                    {% for clan_name, clan_score in record.opponent_scores.items %}
+                                                        <div class="{% if clan_name == clan.name %}text-brand-primary font-medium{% endif %}">
+                                                            {{ clan_name }}: {{ clan_score|floatformat:3 }}B
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center space-x-3">
+                                                    <a href="{% url config.edit_url record|get_attribute:config.id_field %}" 
+                                                       class="text-yellow-500 hover:text-yellow-400">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            onclick="deleteRecord('{{ activity_type|lower }}', '{{ record|get_attribute:config.id_field }}')"
+                                                            class="text-red-500 hover:text-red-400">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for record in config.records %}
+                                        <!-- ...existing code for CvC/Siege rows... -->
+                                        <tr class="border-b border-gray-700 hover:bg-gray-700/30" 
+                                            id="record-row-{{ record|get_attribute:config.id_field }}"
+                                            data-activity-type="{{ activity_type|lower }}">
+                                            <td class="px-4 py-3">{{ record.date_recorded|date:"M d, Y" }}</td>
+                                            {% if activity_type == 'CvC' %}
+                                                <td class="px-4 py-3">{{ record.opponent }}</td>
+                                                <td class="px-4 py-3">{{ record.tier }}</td>
+                                                <td class="px-4 py-3">{{ record.score|intcomma }}</td>
+                                                <td class="px-4 py-3">{{ record.opponent_score|intcomma }}</td>
+                                                <td class="px-4 py-3">
+                                                    {% if record.personal_rewards %}
+                                                        <span class="text-green-500"><i class="fas fa-check"></i></span>
+                                                    {% else %}
+                                                        <span class="text-red-500"><i class="fas fa-times"></i></span>
+                                                    {% endif %}
+                                                </td>
+                                            {% elif activity_type == 'Siege' %}
+                                                <td class="px-4 py-3">
+                                                    {% if record.position == 1 %}
+                                                        <span class="text-green-500 font-medium">W</span>
+                                                    {% else %}
+                                                        <span class="text-red-500 font-medium">L</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="px-4 py-3">{{ record.points|intcomma }}</td>
+                                                 <td class="px-4 py-3>{{ record.opponent_clan }}</td>
+                                                 <td class="px-4 py-3>{{ record.opponent_score|intcomma }}</td>
+                                            {% else %}
+                                                <td class="px-4 py-3">
+                                                    {% with total_clans=record.opponent_scores|length %}
+                                                        {% if record.rank == 1 %}
+                                                            <span class="text-yellow-400">🏆 1st of {{ total_clans }}</span>
+                                                        {% elif record.rank == 2 %}
+                                                            <span class="text-gray-400">🥈 2nd of {{ total_clans }}</span>
+                                                        {% elif record.rank == 3 %}
+                                                            <span class="text-amber-600">🥉 3rd of {{ total_clans }}</span>
+                                                        {% else %}
+                                                            <span class="text-brand-text-muted">
+                                                                {{ record.rank }}{% if total_clans > 0 %} of {{ total_clans }}{% endif %}
+                                                            </span>
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="text-sm text-brand-text-muted">
+                                                        {% for clan_name, clan_score in record.opponent_scores.items %}
+                                                            <div class="{% if clan_name == clan.name %}text-brand-primary font-medium{% endif %}">
+                                                                {{ clan_name }}: {{ clan_score|floatformat:3 }}B
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </td>
+                                            {% endif %}
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center space-x-3">
+                                                    <a href="{% url config.edit_url record|get_attribute:config.id_field %}" 
+                                                       class="text-yellow-500 hover:text-yellow-400">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            onclick="deleteRecord('{{ activity_type|lower }}', '{{ record|get_attribute:config.id_field }}')"
+                                                            class="text-red-500 hover:text-red-400">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
                                 </tbody>
                             </table>
                         </div>
@@ -572,5 +671,20 @@ document.addEventListener('DOMContentLoaded', function () {
     playerSearchInput.addEventListener('input', filterPlayers);
     paginatePlayers();
 });
+
+function showAllHydraRecords() {
+    document.querySelectorAll('.extra-hydra-record').forEach(function(row) {
+        row.style.display = '';
+    });
+    var btn = document.getElementById('show-more-hydra');
+    if (btn) btn.style.display = 'none';
+}
+function showAllChimeraRecords() {
+    document.querySelectorAll('.extra-chimera-record').forEach(function(row) {
+        row.style.display = '';
+    });
+    var btn = document.getElementById('show-more-chimera');
+    if (btn) btn.style.display = 'none';
+}
 </script>
 {% endblock %}

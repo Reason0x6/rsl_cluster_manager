@@ -18,24 +18,23 @@ def home(request):
     players = Player.objects.all().order_by('name')
     clans = Clan.objects.prefetch_related('players', 'cvcs', 'hydra_clashes', 'chimera_clashes', 'siege_records').all().order_by('name')
 
-    # Prepare histories as lists for each clan
+    # Prepare histories as lists for each clan (limit to latest 10 per type)
     for clan in clans:
-        # Use a different attribute name to avoid clashing with related_name
         clan.cvc_history_list = [
             {'date': cvc.date_recorded.strftime('%Y-%m-%d'), 'score': cvc.score}
-            for cvc in clan.cvcs.all().order_by('date_recorded')
+            for cvc in clan.cvcs.all().order_by('-date_recorded')[:10][::-1]
         ]
         clan.hydra_history_list = [
             {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': hydra.score}
-            for hydra in clan.hydra_clashes.all().order_by('date_recorded')
+            for hydra in clan.hydra_clashes.all().order_by('-date_recorded')[:10][::-1]
         ]
         clan.chimera_history_list = [
             {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': chimera.score}
-            for chimera in clan.chimera_clashes.all().order_by('date_recorded')
+            for chimera in clan.chimera_clashes.all().order_by('-date_recorded')[:10][::-1]
         ]
         clan.siege_history_list = [
             {'date': siege.date_recorded.strftime('%Y-%m-%d'), 'points': siege.points}
-            for siege in clan.siege_records.all().order_by('date_recorded')
+            for siege in clan.siege_records.all().order_by('-date_recorded')[:10][::-1]
         ]
 
     context = {

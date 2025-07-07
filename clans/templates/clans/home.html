@@ -94,11 +94,21 @@
             </div>
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">Hydra Points Over Time</h3>
-                <canvas id="hydraChart"></canvas>
+                <div id="hydraChartContainer">
+                    <canvas id="hydraChart"></canvas>
+                    {% if clans|length > 0 and clans.0.hydra_history_list|length > 3 %}
+                    <button id="loadMoreHydra" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load More</button>
+                    {% endif %}
+                </div>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">Chimera Points Over Time</h3>
-                <canvas id="chimeraChart"></canvas>
+                <div id="chimeraChartContainer">
+                    <canvas id="chimeraChart"></canvas>
+                    {% if clans|length > 0 and clans.0.chimera_history_list|length > 3 %}
+                    <button id="loadMoreChimera" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load More</button>
+                    {% endif %}
+                </div>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">Siege Points Over Time</h3>
@@ -125,21 +135,28 @@
             {
                 name: "{{ clan.name|escapejs }}",
                 cvc: [{% for rec in clan.cvc_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
-                hydra: [{% for rec in clan.hydra_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
-                chimera: [{% for rec in clan.chimera_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hydra_all: [{% for rec in clan.hydra_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                chimera_all: [{% for rec in clan.chimera_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
                 siege: [{% for rec in clan.siege_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.points }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
             }{% if not forloop.last %}, {% endif %}
             {% endfor %}
         ];
 
-        function makeLineChart(ctx, label, key, colorList) {
+        // Helper to get only last N items
+        function lastN(arr, n) {
+            return arr.slice(-n);
+        }
+
+        let hydraChart, chimeraChart;
+
+        function makeLineChart(ctx, label, key, colorList, dataOverride) {
             return new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: clans.map(function(clan, idx) {
                         return {
                             label: clan.name,
-                            data: clan[key],
+                            data: dataOverride ? dataOverride(clan) : clan[key],
                             fill: false,
                             borderColor: colorList[idx % colorList.length],
                             backgroundColor: colorList[idx % colorList.length],
@@ -175,9 +192,44 @@
         document.addEventListener('DOMContentLoaded', function() {
             const colors = ['#34d399', '#818cf8', '#f472b6', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
             makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors);
-            makeLineChart(document.getElementById('hydraChart'), 'Points', 'hydra', colors);
-            makeLineChart(document.getElementById('chimeraChart'), 'Points', 'chimera', colors);
+            hydraChart = makeLineChart(
+                document.getElementById('hydraChart'),
+                'Points',
+                null,
+                colors,
+                clan => lastN(clan.hydra_all, 3)
+            );
+            chimeraChart = makeLineChart(
+                document.getElementById('chimeraChart'),
+                'Points',
+                null,
+                colors,
+                clan => lastN(clan.chimera_all, 3)
+            );
             makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
+
+            // Load More Hydra
+            const loadMoreHydra = document.getElementById('loadMoreHydra');
+            if (loadMoreHydra) {
+                loadMoreHydra.addEventListener('click', function() {
+                    hydraChart.data.datasets.forEach(function(ds, idx) {
+                        ds.data = clans[idx].hydra_all;
+                    });
+                    hydraChart.update();
+                    loadMoreHydra.style.display = 'none';
+                });
+            }
+            // Load More Chimera
+            const loadMoreChimera = document.getElementById('loadMoreChimera');
+            if (loadMoreChimera) {
+                loadMoreChimera.addEventListener('click', function() {
+                    chimeraChart.data.datasets.forEach(function(ds, idx) {
+                        ds.data = clans[idx].chimera_all;
+                    });
+                    chimeraChart.update();
+                    loadMoreChimera.style.display = 'none';
+                });
+            }
         });
         </script>
     </section>
