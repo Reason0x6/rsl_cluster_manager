@@ -33,7 +33,6 @@
             <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
                 <tr>
                     <th scope="col" class="px-4 py-3">Player Name</th>
-                    <th scope="col" class="px-4 py-3">Level</th>
                     <th scope="col" class="px-4 py-3">Player Power (mil)</th>
                     <th scope="col" class="px-4 py-3">Current Clan</th>
                     <th scope="col" class="px-4 py-3">Actions</th>
@@ -43,7 +42,6 @@
                 {% for player in players %}
                 <tr class="border-b border-gray-700 hover:bg-gray-700/30">
                     <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
-                    <td class="px-4 py-3">{{ player.level }}</td>
                     <td class="px-4 py-3">{{ player.player_power }}</td>
                     <td class="px-4 py-3">
                         {% if player.clans.first %}

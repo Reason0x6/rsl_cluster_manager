@@ -13,25 +13,26 @@
     <!-- Player management table -->
     <div class="overflow-x-auto">
     <form id="player-management-table">
-        <table class="min-w-full bg-gray-800 text-xs border border-gray-600">
+        <table id="playerTable" class="min-w-full bg-gray-800 text-xs border border-gray-600">
             <thead class="bg-gray-900 sticky top-0 z-10">
                 <tr>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Name</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Player Power (M)</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[80px]">Hydra Clash Score (B)</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Hydra Difficulty</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Chimera Clash Score (B)</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Chimera Difficulty</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Siege</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Activity</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[90px]">Dependability</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Optimiser Link</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[100px]">Development Notes</th>
-                    <th class="px-1 py-1 text-left align-middle border-b border-gray-700 min-w-[70px]">Clan</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[100px]">Name</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[70px] cursor-pointer sortable" data-sort="player_power">Player Power (M) <span class="sort-indicator"></span></th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[80px] cursor-pointer sortable" data-sort="hydra_clash_score">Hydra Clash Score (B) <span class="sort-indicator"></span></th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[90px]">Hydra Difficulty</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[90px] cursor-pointer sortable" data-sort="chimera_clash_score">Chimera Clash Score (B) <span class="sort-indicator"></span></th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[90px]">Chimera Difficulty</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[70px]">Siege</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[70px]">Activity</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[90px]">Dependability</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[100px]">Optimiser Link</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[100px]">Development Notes</th>
+                    <th class="px-2 py-2 text-left align-middle border-b border-gray-700 min-w-[70px]">Clan</th>
                 </tr>
             </thead>
             <tbody>
                 {% for player in players %}
+                {% if player.clan_id %}
                 <tr data-player-id="{{ player.pk }}" >
                     <td class="px-1 py-0.5 align-middle border-b border-gray-700">
                         <input type="text" name="name" value="{{ player.name }}" class="bg-gray-700 text-white w-full px-1 py-0.5 rounded text-left text-xs h-7" style="min-width:60px;"/>
@@ -100,6 +101,7 @@
                         </select>
                     </td>
                 </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
@@ -137,5 +139,39 @@ document.querySelectorAll('#player-management-table input, #player-management-ta
         });
     });
 });
+
+// Sorting logic for number columns
+(function() {
+    const table = document.getElementById('playerTable');
+    const getCellValue = (row, name) => {
+        const input = row.querySelector(`input[name="${name}"]`);
+        return input ? parseFloat(input.value) || 0 : 0;
+    };
+
+    let currentSort = { col: null, asc: true };
+
+    table.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', function() {
+            const sortKey = th.getAttribute('data-sort');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const asc = currentSort.col === sortKey ? !currentSort.asc : true;
+            currentSort = { col: sortKey, asc };
+
+            rows.sort((a, b) => {
+                const va = getCellValue(a, sortKey);
+                const vb = getCellValue(b, sortKey);
+                return asc ? va - vb : vb - va;
+            });
+
+            // Remove sort indicators
+            table.querySelectorAll('.sort-indicator').forEach(span => { span.textContent = ''; });
+            th.querySelector('.sort-indicator').textContent = asc ? '▲' : '▼';
+
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+})();
 </script>
 {% endblock %}
