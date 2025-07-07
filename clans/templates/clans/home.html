@@ -29,7 +29,7 @@
                 <div class="p-6 flex-grow">
                     <div class="flex justify-between items-start mb-3">
                         <a href="{% url 'clan_detail' clan.clan_id %}" class="block text-xl font-semibold text-brand-primary hover:underline">{{ clan.name }}</a>
-                        <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">{{ clan.players.count }} Player{{ clan.players.count|pluralize }}</span>
+                        <span class="text-xs bg-gray-600 text-gray-200 px-2 py-0.5 rounded-full">{{ clan.players.all.count }} Player{{ clan.players.all.count|pluralize }}</span>
                     </div>
                     <div class="space-y-2">
                         <p class="text-sm text-brand-text-muted">
@@ -60,6 +60,17 @@
             <p class="text-sm text-brand-text-muted mt-1">Get started by adding a new clan.</p>
         </div>
         {% endif %}
+        <br />
+        <div class="">
+            <a href="{% url 'player_list' %}" 
+               class="inline-flex items-center justify-center px-6 py-3 border border-brand-border rounded-lg text-sm font-medium text-brand-text-muted hover:bg-gray-700/50 transition-colors">
+                Manage Players
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </a>
+        </div>
     </section>
 
     <hr class="border-brand-border my-12">
@@ -71,67 +82,104 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
             <div class="flex-grow">
-                <h2 class="text-3xl font-semibold text-brand-text">Players</h2>
+                <h2 class="text-3xl font-semibold text-brand-text">Cluster</h2>
             </div>
-            <a href="{% url 'player_create' %}" class="w-full sm:w-auto bg-brand-primary hover:bg-blue-700 text-white font-medium py-2.5 px-5 rounded-lg inline-flex items-center justify-center transition-colors text-sm">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"></path>
-                </svg>
-                Add New Player
-            </a>
         </div>
 
-        {% if players %}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
-            {% for player in players|slice:":10" %}
-            <div class="bg-brand-surface rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 flex flex-col">
-                <!-- Player card content -->
-                <div class="p-6 flex-grow">
-                    <!-- Display Level, Power, and ID as columns in a single row -->
-                    <div class="flex justify-between items-start mb-3">
-                        <a href="{% url 'player_detail' player.uuid %}" class="block text-base font-semibold text-brand-primary hover:underline">{{ player.name }}</a>
-                        {% if player.clan_set.exists %}
-                        <span class="text-[10px] bg-gray-600 text-gray-200 px-1 py-0.5 rounded-full">
-                            {{ player.clan_set.first.name }}
-                        </span>
-                        {% endif %}
-                    </div>
-                    <div class="flex flex-row gap-2 text-[10px] text-brand-text-muted">
-                        <span class="inline-block w-1/3">
-                            <span class="font-semibold">Level:</span>
-                            <span class="font-medium text-gray-300">{{ player.level }}</span>
-                        </span>
-                        <span class="inline-block w-1/3">
-                            <span class="font-semibold">Power:</span>
-                            <span class="font-medium text-gray-300">{{ player.player_power|default:"N/A" }}</span>
-                        </span>
-                        
-                    </div>
-                </div>
-                <div class="bg-gray-700/50 p-4 border-t border-brand-border flex gap-2 justify-center">
-                    <a href="{% url 'player_detail' player.uuid %}" class="text-sm text-green-400 hover:text-green-300 font-medium transition-colors px-3 py-1 rounded-lg border border-green-500 bg-green-900/20">View</a>
-                    <a href="{% url 'player_edit' player.uuid %}" class="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors px-3 py-1 rounded-lg border border-blue-500 bg-blue-900/20">Edit</a>
-                </div>
+        <!-- Cluster Comparison Graphs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            <div class="bg-gray-800 rounded-lg p-4 shadow">
+                <h3 class="text-lg font-semibold text-white mb-2">CvC Points Over Time</h3>
+                <canvas id="cvcChart"></canvas>
             </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow">
+                <h3 class="text-lg font-semibold text-white mb-2">Hydra Points Over Time</h3>
+                <canvas id="hydraChart"></canvas>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow">
+                <h3 class="text-lg font-semibold text-white mb-2">Chimera Points Over Time</h3>
+                <canvas id="chimeraChart"></canvas>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 shadow">
+                <h3 class="text-lg font-semibold text-white mb-2">Siege Points Over Time</h3>
+                <canvas id="siegeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart.js and date-fns adapter for time scale support -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+        <script>
+        // Prepare data for charts
+        // Each clan will have its own line, X axis is date, Y axis is points
+
+        // Data preparation: expects context to provide for each clan:
+        // clan.cvc_history = [{'date': 'YYYY-MM-DD', 'score': int}, ...]
+        // clan.hydra_history = [{'date': 'YYYY-MM-DD', 'score': float}, ...]
+        // clan.chimera_history = [{'date': 'YYYY-MM-DD', 'score': float}, ...]
+        // clan.siege_history = [{'date': 'YYYY-MM-DD', 'points': int}, ...]
+
+        // Build datasets for each chart
+        const clans = [
+            {% for clan in clans %}
+            {
+                name: "{{ clan.name|escapejs }}",
+                cvc: [{% for rec in clan.cvc_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                hydra: [{% for rec in clan.hydra_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                chimera: [{% for rec in clan.chimera_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                siege: [{% for rec in clan.siege_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.points }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+            }{% if not forloop.last %}, {% endif %}
             {% endfor %}
-        </div>
-        <div class="">
-            <a href="{% url 'player_list' %}" 
-               class="inline-flex items-center justify-center px-6 py-3 border border-brand-border rounded-lg text-sm font-medium text-brand-text-muted hover:bg-gray-700/50 transition-colors">
-                Manage Players
-                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-            </a>
-        </div>
-        {% else %}
-        <div class="bg-brand-surface rounded-lg shadow p-8 text-center">
-            <svg class="w-12 h-12 text-brand-text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-            <p class="text-xl font-medium text-brand-text-muted">No players found.</p>
-            <p class="text-sm text-brand-text-muted mt-1">Get started by adding a new player.</p>
-        </div>
-        {% endif %}
+        ];
+
+        function makeLineChart(ctx, label, key, colorList) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: clans.map(function(clan, idx) {
+                        return {
+                            label: clan.name,
+                            data: clan[key],
+                            fill: false,
+                            borderColor: colorList[idx % colorList.length],
+                            backgroundColor: colorList[idx % colorList.length],
+                            tension: 0.2,
+                            pointRadius: 3,
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#ccc' } }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: { unit: 'day', tooltipFormat: 'yyyy-MM-dd' },
+                            title: { display: true, text: 'Date', color: '#ccc' },
+                            ticks: { color: '#ccc' },
+                            grid: { color: '#444' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: label, color: '#ccc' },
+                            ticks: { color: '#ccc' },
+                            grid: { color: '#444' }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const colors = ['#34d399', '#818cf8', '#f472b6', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
+            makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors);
+            makeLineChart(document.getElementById('hydraChart'), 'Points', 'hydra', colors);
+            makeLineChart(document.getElementById('chimeraChart'), 'Points', 'chimera', colors);
+            makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
+        });
+        </script>
     </section>
 </div>
 {% endblock %}

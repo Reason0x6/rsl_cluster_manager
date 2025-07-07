@@ -37,7 +37,7 @@
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 md:grid-cols-5 divide-x divide-y divide-brand-border border-t border-brand-border">
             <div class="p-6 text-center">
-                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.players.count }}</div>
+                <div class="text-3xl font-semibold text-brand-text mb-1">{{ clan.players.all|length }}</div>
                 <div class="text-sm text-brand-text-muted">Members</div>
             </div>
             <div class="p-6 text-center">
@@ -241,7 +241,7 @@
         <div>
             <section class="bg-brand-surface rounded-xl shadow-lg p-6">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-semibold text-brand-text">Players ({{ clan.players.count }})</h2>
+                    <h2 class="text-xl font-semibold text-brand-text">Players ({{ clan.players.all|length }})</h2>
                     <a href="{% url 'clan_edit' clan.clan_id %}?tab=players" 
                        class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
                         <i class="fas fa-user-plus"></i>
