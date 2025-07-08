@@ -103,6 +103,7 @@
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 flex antialiased">
+    {% if user.is_authenticated %}
     <!-- Sidebar -->
     <aside class="bg-gray-800 w-64 min-h-screen p-6 flex flex-col justify-between fixed lg:relative lg:translate-x-0 transform -translate-x-full lg:block transition-transform duration-200 ease-in-out z-30">
         <div>
@@ -171,7 +172,7 @@
                     </button>
                     <h2 class="text-lg font-semibold text-gray-200 hidden md:block">
                         <a href="{% url 'home' %}" class="hover:text-purple-400 transition-colors">
-                            <i class="fas fa-dragon mr-2"></i>Raid Clan Manager
+                            <i class="fas fa-dragon mr-2"></i>Wrath of Rohan
                         </a>
                     </h2>
                 </div>
@@ -179,9 +180,12 @@
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
                         <span class="text-xs text-gray-500 hidden sm:block">Welcome, {{ user.username }}</span>
-                        <button class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">
-                            Logout
-                        </button>
+                        <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">
+                                Logout
+                            </button>
+                        </form>
                     {% endif %}
                 </div>
             </div>
@@ -193,6 +197,184 @@
             {% endblock %}
         </main>
     </div>
+    {% else %}
+    <!-- Minimal dashboard for anonymous users -->
+    <div class="flex-1 flex flex-col items-center justify-center min-h-screen bg-gray-900">
+        <div class="bg-gray-800 rounded-xl shadow-lg p-8 max-w-6xl w-full text-center">
+            <h1 class="text-3xl font-bold text-white mb-4"> <i class="fas fa-dragon mr-2"></i>Wrath of Rohan</h1>
+            <p class="text-gray-300 mb-6">Welcome! Please <a href="/accounts/login/" class="text-purple-400 underline hover:text-purple-300">log in</a> to access the full site.</p>
+            <div class="mt-6">
+                <h2 class="text-xl font-semibold text-white mb-2">Cluster Overview</h2>
+                <p class="text-gray-400 mb-6">You must be logged in to view clan and player details.</p>
+
+                <!-- Cluster Comparison Graphs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-gray-800 rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-semibold text-white mb-2">CvC Points Over Time</h3>
+                        <canvas id="cvcChart"></canvas>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-semibold text-white mb-2">Hydra Points Over Time</h3>
+                        <div id="hydraChartContainer">
+                            <canvas id="hydraChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-semibold text-white mb-2">Chimera Points Over Time</h3>
+                        <div id="chimeraChartContainer">
+                            <canvas id="chimeraChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-lg p-4 shadow">
+                        <h3 class="text-lg font-semibold text-white mb-2">Siege Points Over Time</h3>
+                        <canvas id="siegeChart"></canvas>
+                    </div>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+                <script>
+                const clans = [
+                    {% for clan in clans %}
+                    {
+                        name: "{{ clan.name|escapejs }}",
+                        cvc: [{% for rec in clan.cvc_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        hydra_all: [{% for rec in clan.hydra_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        chimera_all: [{% for rec in clan.chimera_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.score }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                        siege: [{% for rec in clan.siege_history_list|default_if_none:"" %}{ x: "{{ rec.date }}", y: {{ rec.points }} }{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    }{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                ];
+
+                function lastN(arr, n) {
+                    return arr.slice(-n);
+                }
+
+                function makeLineChart(ctx, label, key, colorList, dataOverride) {
+                    return new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            datasets: clans.map(function(clan, idx) {
+                                return {
+                                    label: clan.name,
+                                    data: dataOverride ? dataOverride(clan) : clan[key],
+                                    fill: false,
+                                    borderColor: colorList[idx % colorList.length],
+                                    backgroundColor: colorList[idx % colorList.length],
+                                    tension: 0.2,
+                                    pointRadius: 3,
+                                };
+                            })
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: true, labels: { color: '#ccc' } }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: { unit: 'day', tooltipFormat: 'yyyy-MM-dd' },
+                                    title: { display: true, text: 'Date', color: '#ccc' },
+                                    ticks: { color: '#ccc' },
+                                    grid: { color: '#444' }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    title: { display: true, text: label, color: '#ccc' },
+                                    ticks: { color: '#ccc' },
+                                    grid: { color: '#444' }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const colors = ['#34d399', '#818cf8', '#f472b6', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
+                    makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors);
+                    makeLineChart(document.getElementById('hydraChart'), 'Points', 'hydra_all', colors);
+                    makeLineChart(document.getElementById('chimeraChart'), 'Points', 'chimera_all', colors);
+                    makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
+                });
+                </script>
+
+                <!-- Basic Clan Info Table -->
+                <div class="mt-12">
+                    <h3 class="text-lg font-semibold text-white mb-4">Clan Overview</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-400 bg-gray-800 rounded-lg sortable-table">
+                            <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                                <tr>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="name">Clan Name <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="level">Level <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="members">Members <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="power">Total Power <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="hydra">Hydra Req. <span class="sort-indicator"></span></th>
+                                    <th class="px-4 py-3 cursor-pointer" data-sort="chimera">Chimera Req. <span class="sort-indicator"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for clan in clans %}
+                                <tr class="border-b border-gray-700"
+                                    data-name="{{ clan.name|lower }}"
+                                    data-level="{{ clan.clan_level|default:0 }}"
+                                    data-members="{{ clan.players.all|length|default:0 }}"
+                                    data-power="{{ clan.total_power|floatformat:2|default:0 }}"
+                                    data-hydra="{{ clan.hydra_clash_required_score|floatformat:1|default:0 }}"
+                                    data-chimera="{{ clan.chimera_clash_required_score|floatformat:1|default:0 }}">
+                                    <td class="px-4 py-3 text-white font-medium">{{ clan.name }}</td>
+                                    <td class="px-4 py-3">{{ clan.clan_level }}</td>
+                                    <td class="px-4 py-3">{{ clan.players.all|length }}</td>
+                                    <td class="px-4 py-3">{{ clan.total_power|floatformat:2 }}M</td>
+                                    <td class="px-4 py-3">{{ clan.hydra_clash_required_score|floatformat:1 }}B</td>
+                                    <td class="px-4 py-3">{{ clan.chimera_clash_required_score|floatformat:1 }}B</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Clan & Players Table -->
+                <div class="mt-12">
+                    <h3 class="text-lg font-semibold text-white mb-4">Clan Members</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {% for clan in clans %}
+                        {% if clan.players.all %}
+                        <div class="bg-gray-800 rounded-lg p-4 shadow">
+                            <h4 class="text-md font-semibold text-white mb-2">{{ clan.name }}</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-400 bg-gray-800 rounded-lg sortable-table">
+                                    <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                                        <tr>
+                                            <th class="px-4 py-3 cursor-pointer" data-sort="name">Player Name <span class="sort-indicator"></span></th>
+                                            <th class="px-4 py-3 cursor-pointer" data-sort="power">Power <span class="sort-indicator"></span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for player in clan.players.all %}
+                                        <tr class="border-b border-gray-700"
+                                            data-name="{{ player.name|lower }}"
+                                            data-power="{{ player.player_power|default:"0" }}">
+                                            <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
+                                            <td class="px-4 py-3">{{ player.player_power|default:"--" }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="2" class="px-4 py-3 text-gray-400 text-center">No players</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% block extra_js %}{% endblock %}
 
@@ -219,6 +401,102 @@
             // Trigger a resize event programmatically
             window.dispatchEvent(new Event('resize'));
         });
+
+        // Sorting for each clan's player table
+        document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.sortable-table').forEach(function(table) {
+        const getCellValue = (row, idx, type) => {
+            const cell = row.children[idx];
+            if (!cell) return '';
+            if (type === 'power') {
+                // Use data-power attribute for numeric sort
+                return parseFloat(cell.getAttribute('data-power')) || 0;
+            }
+            if (type === 'name') {
+                return (cell.getAttribute('data-name') || cell.textContent || '').toLowerCase();
+            }
+            return cell.textContent || '';
+        };
+
+        table.querySelectorAll('th[data-sort]').forEach(function(th, idx) {
+            th.addEventListener('click', function() {
+                const sortKey = th.getAttribute('data-sort');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const asc = !th.classList.contains('sorted-asc');
+                // Remove sort indicators from all headers
+                table.querySelectorAll('.sort-indicator').forEach(span => { span.textContent = ''; });
+                table.querySelectorAll('th').forEach(header => {
+                    header.classList.remove('sorted-asc', 'sorted-desc');
+                });
+                th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+                th.querySelector('.sort-indicator').textContent = asc ? '▲' : '▼';
+
+                // Determine column index
+                const colIdx = Array.from(th.parentNode.children).indexOf(th);
+
+                rows.sort((a, b) => {
+                    const va = getCellValue(a, colIdx, sortKey);
+                    const vb = getCellValue(b, colIdx, sortKey);
+                    if (sortKey === 'power') {
+                        return asc ? va - vb : vb - va;
+                    }
+                    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+
+                // Re-append sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+    });
+});
+    </script>
+    <script>
+    // Generic sorting for all .sortable-table tables
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.sortable-table').forEach(function(table) {
+            table.querySelectorAll('th[data-sort]').forEach(function(th) {
+                th.addEventListener('click', function() {
+                    const sortKey = th.getAttribute('data-sort');
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    const asc = !th.classList.contains('sorted-asc');
+                    // Remove sort indicators from all headers
+                    table.querySelectorAll('.sort-indicator').forEach(span => { span.textContent = ''; });
+                    table.querySelectorAll('th').forEach(header => {
+                        header.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+                    th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+                    th.querySelector('.sort-indicator').textContent = asc ? '▲' : '▼';
+
+                    // Determine column index
+                    const colIdx = Array.from(th.parentNode.children).indexOf(th);
+
+                    // Determine if numeric sort
+                    const numericSortKeys = ['level', 'members', 'power', 'hydra', 'chimera'];
+                    const isNumeric = numericSortKeys.includes(sortKey);
+
+                    rows.sort((a, b) => {
+                        let va, vb;
+                        if (isNumeric) {
+                            va = parseFloat(a.getAttribute('data-' + sortKey)) || 0;
+                            vb = parseFloat(b.getAttribute('data-' + sortKey)) || 0;
+                        } else {
+                            va = (a.getAttribute('data-' + sortKey) || '').toLowerCase();
+                            vb = (b.getAttribute('data-' + sortKey) || '').toLowerCase();
+                        }
+                        if (isNumeric) {
+                            return asc ? va - vb : vb - va;
+                        }
+                        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                    });
+
+                    // Re-append sorted rows
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        });
+    });
     </script>
 </body>
 </html>

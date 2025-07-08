@@ -1,4 +1,6 @@
 from django.urls import path
+from django.contrib.auth.views import LogoutView
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
@@ -61,4 +63,8 @@ urlpatterns = [
     path('manage/', views.manage_clans, name='manage_clans'),
     path('update_player_field/<uuid:player_id>/', views.update_player_field, name='update_player_field'),
     path('update_player_data/<uuid:player_id>/', views.update_player_data, name='update_player_data'),
+
+    # Login and logout URLs
+    path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('logout/', LogoutView.as_view(next_page='/'), name='logout'),
 ]

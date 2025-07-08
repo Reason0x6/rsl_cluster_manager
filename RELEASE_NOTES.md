@@ -1,5 +1,19 @@
 # Release Notes 
-#V1.0
+# V1.1
+  - Improved login experience: After successful login, users are redirected to the home page (`/`).
+  - Login page is now fully stylized and matches the application's dark theme.
+  - Fixed: Login page no longer references a missing password reset URL.
+  - Added `/accounts/login/` route for Django authentication.
+  - All tables in the anonymous dashboard and player management are now sortable by clicking column headers.
+  - Clan member tables in the anonymous dashboard are now hidden if the clan has no players.
+  - Clan member tables are now displayed in a two-column grid, one table per clan, showing only player names and power.
+  - Added basic clan info and clan/player tables to the anonymous dashboard after the cluster comparison graphs.
+  - Anonymous dashboard now displays cluster comparison graphs (CvC, Hydra, Chimera, Siege).
+  - All endpoints that create, edit, modify, or delete data now require authentication.
+  - Siege position is now a dropdown (Loss/Win) in siege forms.
+  - Added utility to remove a team type by name or value.
+
+# V1.0
 
 ## Features
 
