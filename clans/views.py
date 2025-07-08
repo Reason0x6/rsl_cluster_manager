@@ -8,6 +8,8 @@ from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, Chi
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 import json
 from decimal import Decimal
 from django.db.models import Avg, F
@@ -48,6 +50,7 @@ def home(request):
     }
     return render(request, 'clans/home.html', context)
 
+@login_required
 def player_detail(request, uuid):  # Change from player_uuid to uuid
     player = get_object_or_404(Player, uuid=uuid)
     arena_teams = ArenaTeam.objects.filter(player=player)
@@ -60,6 +63,7 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
     }
     return render(request, 'clans/player_detail.html', context)
 
+@login_required
 def player_edit(request, uuid):  # Changed from player_uuid to uuid
     player = get_object_or_404(Player, uuid=uuid)
     if request.method == 'POST':
@@ -76,6 +80,7 @@ def player_edit(request, uuid):  # Changed from player_uuid to uuid
         'action': 'Edit'
     })
 
+@login_required
 def player_create(request):
     if request.method == 'POST':
         form = PlayerForm(request.POST)
@@ -87,6 +92,7 @@ def player_create(request):
     context = {'form': form, 'action': 'Create'}
     return render(request, 'clans/player_form.html', context)
 
+@login_required
 def clan_detail(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     
@@ -148,6 +154,7 @@ def clan_detail(request, clan_id):
     }
     return render(request, 'clans/clan_detail.html', context)
 
+@login_required
 def clan_edit(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -177,6 +184,7 @@ def clan_edit(request, clan_id):
     context = {'form': form, 'clan': clan, 'action': 'Edit'}
     return render(request, 'clans/clan_form.html', context)
 
+@login_required
 def clan_create(request):
     if request.method == 'POST':
         form = ClanForm(request.POST)
@@ -190,6 +198,7 @@ def clan_create(request):
 
 # --- Create Views for Activities ---
 
+@login_required
 def cvc_create(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -209,6 +218,7 @@ def cvc_create(request, clan_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def hydra_clash_create(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -228,6 +238,7 @@ def hydra_clash_create(request, clan_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def chimera_clash_create(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -247,6 +258,7 @@ def chimera_clash_create(request, clan_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def siege_create(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -269,6 +281,7 @@ def siege_create(request, clan_id):
 
 # --- Edit Views for Activities ---
 
+@login_required
 def cvc_edit(request, cvc_id):
     cvc_instance = get_object_or_404(CvC, cvc_id=cvc_id)
     clan = cvc_instance.clan
@@ -295,6 +308,7 @@ def cvc_edit(request, cvc_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def hydra_clash_edit(request, hydra_clash_id):
     hc_instance = get_object_or_404(HydraClash, hydra_clash_id=hydra_clash_id)
     clan = hc_instance.clan
@@ -320,6 +334,7 @@ def hydra_clash_edit(request, hydra_clash_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def chimera_clash_edit(request, chimera_id):
     cc_instance = get_object_or_404(ChimeraClash, chimera_clash_id=chimera_id)
     clan = cc_instance.clan
@@ -345,6 +360,7 @@ def chimera_clash_edit(request, chimera_id):
     }
     return render(request, 'clans/generic_activity_form.html', context)
 
+@login_required
 def siege_edit(request, siege_id):
     siege = get_object_or_404(Siege, siege_id=siege_id)
     if request.method == 'POST':
@@ -364,6 +380,7 @@ def siege_edit(request, siege_id):
     }
     return render(request, 'clans/siege_form.html', context)
 
+@method_decorator(login_required, name='dispatch')
 class PlayerListView(ListView):
     model = Player
     template_name = 'clans/player_list.html'
@@ -372,6 +389,7 @@ class PlayerListView(ListView):
     def get_queryset(self):
         return Player.objects.all().prefetch_related('clans')
 
+@method_decorator(login_required, name='dispatch')
 class PlayerDetailView(DetailView):
     model = Player
     template_name = 'clans/player_detail.html'
@@ -385,6 +403,7 @@ class PlayerDetailView(DetailView):
         return context
 
 @require_http_methods(["POST", "DELETE"])
+@login_required
 def manage_player_teams(request, player_uuid, team_id=None):
     try:
         player = Player.objects.get(uuid=player_uuid)
@@ -404,6 +423,7 @@ def manage_player_teams(request, player_uuid, team_id=None):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_http_methods(["DELETE"])
+@login_required
 def delete_activity(request, activity_type, record_id):
     """API endpoint for deleting activity records"""
     try:
@@ -430,6 +450,7 @@ def delete_activity(request, activity_type, record_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 @require_http_methods(["DELETE"])
+@login_required
 def delete_player(request, player_uuid):
     try:
         player = get_object_or_404(Player, uuid=player_uuid)
@@ -438,21 +459,7 @@ def delete_player(request, player_uuid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
-def calculate_performance(clan):
-    # Example calculations - adjust based on your actual data
-    cvc_performance = (
-        clan.cvcrecord_set.filter(personal_rewards=True).count() /
-        clan.cvcrecord_set.count() * 100 if clan.cvcrecord_set.exists() else 0
-    )
-    
-    hydra_progress = (
-        clan.hydrarecord_set.aggregate(Avg('opponent_scores'))['score__avg'] /
-        clan.hydra_clash_required_score * 100 if clan.hydrarecord_set.exists() else 0
-    )
-    
-    return cvc_performance, hydra_progress
-
+@login_required
 def get_activities_config(clan):
     """
     Returns configuration for clan activities including URLs and records
@@ -501,6 +508,7 @@ def get_activities_config(clan):
     }
 
 @require_http_methods(["POST"])
+@login_required
 def import_players(request):
     try:
         # Accept both string and already-parsed JSON
@@ -569,7 +577,7 @@ def import_players(request):
             'message': f'Import error: {str(e)}'
         }, status=400)
 
-# Add this new view function
+@login_required
 def get_clan_players(request, clan_id):
     """API endpoint to get paginated players for a clan"""
     try:
@@ -598,6 +606,7 @@ def get_clan_players(request, clan_id):
             'message': str(e)
         }, status=400)
 
+@login_required
 def la_tracker(request):
     players = Player.objects.all().order_by('name')
     selected_player_id = request.GET.get('player')
@@ -633,6 +642,7 @@ def la_tracker(request):
     return render(request, 'clans/la_tracker.html', context)
 
 @require_http_methods(["POST"])
+@login_required
 def la_battle_create(request, player_id):
     try:
         player = get_object_or_404(Player, uuid=player_id)
@@ -663,6 +673,7 @@ def la_battle_create(request, player_id):
         }, status=400)
 
 @require_http_methods(["GET", "PUT", "DELETE"])
+@login_required
 def la_battle_detail(request, battle_id):
     battle = get_object_or_404(LABattle, battle_id=battle_id)
     
@@ -716,6 +727,7 @@ def la_battle_detail(request, battle_id):
                 'message': str(e)
             }, status=400)
 
+@login_required
 def create_siege_plan(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
     if request.method == 'POST':
@@ -729,6 +741,7 @@ def create_siege_plan(request, clan_id):
         form = SiegePlanForm()
     return render(request, 'clans/create_siege_plan.html', {'form': form, 'clan': clan})
 
+@login_required
 def assign_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
     clan = siege_plan.clan
@@ -781,12 +794,14 @@ def assign_siege_plan(request, plan_id):
         'player_data': json.dumps(player_data), 
         'team_types': get_team_types_as_json(),  # Serialize list of tupples data as JSON
     })
+@login_required
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
     assignments = siege_plan.assignments.all()
     return render(request, 'clans/export_siege_plan.html', {'siege_plan': siege_plan, 'assignments': assignments})
 
 @csrf_exempt
+@login_required
 def delete_siege_plan(request, plan_id):
     if request.method == 'DELETE':
         siege_plan = get_object_or_404(SiegePlan, id=plan_id)
@@ -807,6 +822,7 @@ def get_team_types_as_json():
     # The `safe=False` parameter is required to send a list as the top-level JSON object.
     return json.dumps(team_types_qs)
 
+@login_required
 def manage_arena_teams(request, player_uuid):
     player = get_object_or_404(Player, uuid=player_uuid)
     arena_teams = ArenaTeam.objects.filter(player=player)
@@ -832,6 +848,7 @@ def manage_arena_teams(request, player_uuid):
     }
     return render(request, 'clans/player_teams.html', context)
 
+@login_required
 def manage_clans(request):
     clans = Clan.objects.all()
     selected_clan_id = request.GET.get('clan')
@@ -848,6 +865,7 @@ def manage_clans(request):
 
 # AJAX endpoint for saving player changes
 @csrf_exempt
+@login_required
 def update_player_field(request, player_id):
     if request.method == 'POST':
         player = get_object_or_404(Player, pk=player_id)
@@ -860,6 +878,7 @@ def update_player_field(request, player_id):
     return JsonResponse({'success': False}, status=400)
 
 @csrf_exempt
+@login_required
 def update_player_data(request, player_id):
     if request.method == 'POST':
         try:
