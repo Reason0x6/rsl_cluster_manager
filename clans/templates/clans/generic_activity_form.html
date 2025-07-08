@@ -171,7 +171,7 @@
                                 updateScores();
                             }
                         });
-                        </script>
+                        </script>  
                     {% else %}
                         {% if field.field.widget.input_type == "checkbox" %}
                         <label class="inline-flex items-center space-x-3">
@@ -193,25 +193,6 @@
                 {% endfor %}
             </div>
         {% endfor %}
-        {% if activity_type == "Siege Record" %}
-            <div class="mb-6">
-                <label for="war_date" class="block text-sm font-medium text-gray-400 mb-2">War Date</label>
-                <input type="date" id="war_date" name="war_date" 
-                       class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2.5"
-                       {% if activity_instance %}
-                           value="{{ activity_instance.war_date|date:'Y-m-d' }}"
-                       {% else %}
-                           value=""
-                       {% endif %}>
-            </div>
-        
-        <div class="mb-6">
-            <label for="opponent_clan" class="block text-sm font-medium text-gray-400 mb-2">Opponent Clan</label>
-            <input type="text" id="opponent_clan" name="opponent_clan" 
-                   class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg w-full p-2.5"
-                   placeholder="Enter opponent clan name">
-        </div>
-{% endif %}
 
         <div class="flex items-center space-x-3 mt-8">
             <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">

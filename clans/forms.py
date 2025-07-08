@@ -39,6 +39,9 @@ class CvCForm(forms.ModelForm):
     class Meta:
         model = CvC
         exclude = ['clan']
+        widgets = {
+            'date_recorded': forms.DateInput(attrs={'type': 'date'}),
+        }
 
 class SiegeForm(forms.ModelForm):
     class Meta:
