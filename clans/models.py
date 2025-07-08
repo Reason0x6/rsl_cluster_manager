@@ -74,6 +74,9 @@ class Player(models.Model):
         related_name='player_set'  # Changed from 'players' to 'player_set' to avoid clash
     )
 
+    class Meta:
+        ordering = ['name']
+
     def __str__(self):
         return self.name
 

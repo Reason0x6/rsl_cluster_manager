@@ -17,15 +17,12 @@
                        class="bg-gray-700 text-sm text-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500 w-full sm:w-auto">
                 <i class="fas fa-search absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
             </div>
-            <button id="filterToggle" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm py-2 px-3 rounded-lg flex items-center space-x-1">
-                <i class="fas fa-sort-amount-down text-xs"></i>
-                <span>Filter</span>
+            <button type="button" 
+                    onclick="openAddModal()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
+                <i class="fas fa-file-import"></i>
+                <span>Add Players</span>
             </button>
-            <a href="{% url 'player_create' %}" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
-                <i class="fas fa-plus"></i>
-                <span>Add Player</span>
-            </a>
-            <!-- Import Players Button -->
             <button type="button" 
                     onclick="openImportModal()"
                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
@@ -48,21 +45,21 @@
                 <div class="bg-gray-700/50 p-4 rounded-lg">
                     <p class="text-sm text-gray-300 mb-2">Example JSON format:</p>
                     <pre class="text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
-[
-  {
-    "Name": "PlayerName",
-    "Player Power": 4.5,
-    "Hydra Clash": 1.2,
-    "Hydra Difficulty": ["NM", "B"],
-    "Chimera Clash": 2.3,
-    "Chimera Difficulty": ["UNM", "NM"],
-    "Siege": "Competitive",
-    "Activity": "High",
-    "Dependability": "Medium",
-    "Development?": "Needs gear"
-  }
-]
-</pre>
+                        [
+                            {
+                                "Name": "PlayerName",
+                                "Player Power": 4.5,
+                                "Hydra Clash": 1.2,
+                                "Hydra Difficulty": ["NM", "B"],
+                                "Chimera Clash": 2.3,
+                                "Chimera Difficulty": ["UNM", "NM"],
+                                "Siege": "Competitive",
+                                "Activity": "High",
+                                "Dependability": "Medium",
+                                "Development?": "Needs gear"
+                            }
+                        ]
+                        </pre>
                 </div>
                 <textarea id="jsonInput"
                           class="w-full h-48 bg-gray-700 border-gray-600 text-white text-sm rounded-lg p-3"
@@ -81,19 +78,81 @@
         </div>
     </div>
 
+        <!-- Add Modal -->
+    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-white">Add Player</h3>
+                <button onclick="closeAddModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    {% if field.name != 'team_types' %}
+                        <div class="mb-6">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-400 mb-2">
+                                {{ field.label }}
+                            </label>
+                            <div class="relative">
+                                {{ field }}
+                            </div>
+                            {% if field.help_text %}
+                                <p class="mt-2 text-xs text-gray-400">{{ field.help_text|safe }}</p>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <p class="mt-2 text-xs text-red-400">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                
+                <!-- Team Types Selection -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-400 mb-2">Team Types</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-gray-700/50 p-4 rounded-lg">
+                        {% for choice in form.team_types %}
+                            <label class="inline-flex items-center space-x-3">
+                                {{ choice.tag }}
+                                <span class="text-sm text-white">{{ choice.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeAddModal()" 
+                                class="px-4 py-2 text-sm text-gray-400 hover:text-white">
+                            Cancel
+                        </button>
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                            Add Player
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-gray-400">
+        <table class="w-full text-sm text-left text-gray-400 sortable-table">
             <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
                 <tr>
-                    <th scope="col" class="px-4 py-3">Player Name</th>
-                    <th scope="col" class="px-4 py-3">Player Power (mil)</th>
-                    <th scope="col" class="px-4 py-3">Current Clan</th>
+                    <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="name">Player Name <span class="sort-indicator"></span></th>
+                    <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="power">Player Power (mil) <span class="sort-indicator"></span></th>
+                    <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="clan">Current Clan <span class="sort-indicator"></span></th>
                     <th scope="col" class="px-4 py-3">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for player in players %}
-                <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                <tr class="border-b border-gray-700 hover:bg-gray-700/30"
+                    data-name="{{ player.name|lower }}"
+                    data-power="{{ player.player_power|default:0 }}"
+                    data-clan="{% if player.clans.first %}{{ player.clans.first.name|lower }}{% else %}no clan{% endif %}">
                     <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
                     <td class="px-4 py-3">{{ player.player_power }}</td>
                     <td class="px-4 py-3">
@@ -137,6 +196,16 @@ function openImportModal() {
 function closeImportModal() {
     document.getElementById('importModal').classList.add('hidden');
     document.getElementById('importModal').classList.remove('flex');
+}
+
+function openAddModal() {
+    document.getElementById('addModal').classList.remove('hidden');
+    document.getElementById('addModal').classList.add('flex');
+}
+
+function closeAddModal() {
+    document.getElementById('addModal').classList.add('hidden');
+    document.getElementById('addModal').classList.remove('flex');
 }
 
 async function importPlayers() {
@@ -218,26 +287,46 @@ document.getElementById('searchInput').addEventListener('keyup', function() {
     });
 });
 
-// Sort functionality
-document.querySelectorAll('th').forEach(header => {
-    header.addEventListener('click', () => {
-        const index = Array.from(header.parentNode.children).indexOf(header);
-        const rows = Array.from(document.querySelectorAll('tbody tr'));
-        const isNumeric = header.textContent.includes('Level') || header.textContent.includes('Power');
-        
-        rows.sort((a, b) => {
-            const aValue = a.children[index].textContent;
-            const bValue = b.children[index].textContent;
-            
-            if (isNumeric) {
-                return parseInt(aValue) - parseInt(bValue);
-            }
-            return aValue.localeCompare(bValue);
+// Sort functionality using data-sort/data-* attributes
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.sortable-table').forEach(function(table) {
+        table.querySelectorAll('th[data-sort]').forEach(function(th) {
+            th.addEventListener('click', function() {
+                const sortKey = th.getAttribute('data-sort');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const asc = !th.classList.contains('sorted-asc');
+                // Remove sort indicators from all headers
+                table.querySelectorAll('.sort-indicator').forEach(span => { span.textContent = ''; });
+                table.querySelectorAll('th').forEach(header => {
+                    header.classList.remove('sorted-asc', 'sorted-desc');
+                });
+                th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+                th.querySelector('.sort-indicator').textContent = asc ? '▲' : '▼';
+
+                // Determine if numeric sort
+                const numericSortKeys = ['power'];
+                const isNumeric = numericSortKeys.includes(sortKey);
+
+                rows.sort((a, b) => {
+                    let va, vb;
+                    if (isNumeric) {
+                        va = parseFloat(a.getAttribute('data-' + sortKey)) || 0;
+                        vb = parseFloat(b.getAttribute('data-' + sortKey)) || 0;
+                    } else {
+                        va = (a.getAttribute('data-' + sortKey) || '').toLowerCase();
+                        vb = (b.getAttribute('data-' + sortKey) || '').toLowerCase();
+                    }
+                    if (isNumeric) {
+                        return asc ? va - vb : vb - va;
+                    }
+                    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+
+                // Re-append sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
         });
-        
-        const tbody = document.querySelector('tbody');
-        tbody.innerHTML = '';
-        rows.forEach(row => tbody.appendChild(row));
     });
 });
 

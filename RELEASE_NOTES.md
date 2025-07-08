@@ -1,4 +1,50 @@
 # Release Notes 
+
+# V1.2
+---
+## Summary of Changes
+This release includes improvements to the player management UI, sorting and import features, and minor workflow and codebase cleanups. Below are the details for each changed file.
+
+### `publish.yml`
+* **Docker Tagging**: The Docker image tag is now set to use `${{ github.ref_name }}` instead of the full output from the metadata action, ensuring more predictable and branch-specific tags.
+
+### `models.py`
+* **Player Model**: Added an explicit `Meta` class with ordering by `name` to ensure consistent player ordering throughout the application.
+
+### `base.html`
+* **Sidebar Navigation**: The "Manage Players" link now points to the player list instead of the player creation page, improving navigation consistency.
+
+### `clan_detail.html`
+* **Stats Cards**: Updated the stats section to use a compact card layout for Members, Power, Hydra, and Chimera, improving readability.
+* **Player Search**: Enabled the player search input (was previously disabled).
+* **Optimiser Link**: Only shows the "View Account" link if the optimiser link is not `None`.
+* **Player Table Filtering**: Improved the JavaScript for filtering and paginating the player table, ensuring accurate search and pagination behavior.
+
+### `clan_form.html`
+* **Player Table Sorting**: Added sortable columns for player selection, name, and power. Default sort is by selected players.
+* **Bulk Import**: Button now reads "Bulk Import Players" for clarity.
+* **Sorting Logic**: Enhanced JavaScript to support sorting by selected status, name, and power.
+* **UI Consistency**: Minor tweaks to table headers and import modal for clarity and usability.
+
+### `create_siege_plan.html`
+* **JSON Example**: Added a sample JSON format for siege plan creation to guide users.
+
+### `home.html`
+* **Clan Card Actions**: Updated the "View" and "Edit" buttons for a more compact, mobile-friendly layout.
+* **Removed Redundant Button**: The "Manage Players" button below the clan grid was removed for a cleaner interface.
+
+### `player_list.html`
+* **Add Player Modal**: Added a modal form for adding players directly from the player list page.
+* **Import Modal**: Improved the import modal with a more detailed JSON example and better error handling.
+* **Table Sorting**: Added sortable columns for player name, power, and clan.
+* **UI Cleanup**: Removed unused filter button and streamlined the action buttons.
+* **JavaScript**: Enhanced sorting and searching logic for better UX.
+
+### `urls.py`
+* **Removed Unused Route**: The `player_create` URL pattern was removed, as player creation is now handled via modal on the player list page.
+
+### `views.py`
+* **PlayerListView**: Now supports both GET and POST, allowing player creation directly from the player list page. The context includes the player form for modal usage.
 # V1.1
   - Improved login experience: After successful login, users are redirected to the home page (`/`).
   - Login page is now fully stylized and matches the application's dark theme.
