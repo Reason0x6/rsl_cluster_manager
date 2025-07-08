@@ -61,7 +61,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'raid_clan_manager.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/stable/ref/settings/#databases
 
