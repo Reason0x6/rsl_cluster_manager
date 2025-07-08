@@ -380,7 +380,34 @@ class TeamType(models.Model):
             to_remove = [tt for tt in player_team_types if tt not in valid_names]
             if to_remove:
                 player.team_types.remove(*TeamType.objects.filter(name__in=to_remove))
-            
+
+    @classmethod
+    def remove_by_name_or_value(cls, identifier):
+        """
+        Remove a TeamType by its name (code) or display value.
+        Also removes the team type from all players.
+        Usage:
+            TeamType.remove_by_name_or_value('banner_lords')
+            TeamType.remove_by_name_or_value('Banner Lords')
+        """
+        # Try to match by code (name)
+        team_type = cls.objects.filter(name=identifier).first()
+        if not team_type:
+            # Try to match by display value
+            code = None
+            for code_candidate, display in TEAM_CHOICES:
+                if display.lower() == identifier.lower():
+                    code = code_candidate
+                    break
+            if code:
+                team_type = cls.objects.filter(name=code).first()
+        if team_type:
+            # Remove from all players
+            for player in team_type.players.all():
+                player.team_types.remove(team_type)
+            team_type.delete()
+            return True
+        return False
 
 class CvCRecord(models.Model):
     clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='cvc_records')

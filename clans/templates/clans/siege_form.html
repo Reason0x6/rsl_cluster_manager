@@ -19,7 +19,15 @@
                         {{ field.label }}
                     </label>
                     <div class="relative">
-                        {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+                        {% if field.name == 'position' %}
+                            <select name="position" id="{{ field.id_for_label }}"
+                                    class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+                                <option value="0" {% if field.value|stringformat:"s" == "0" %}selected{% endif %}>Loss</option>
+                                <option value="1" {% if field.value|stringformat:"s" == "1" %}selected{% endif %}>Win</option>
+                            </select>
+                        {% else %}
+                            {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+                        {% endif %}
                     </div>
                     {% if field.help_text %}
                         <p class="mt-2 text-xs text-gray-400">{{ field.help_text|safe }}</p>

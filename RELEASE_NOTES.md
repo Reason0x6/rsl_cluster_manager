@@ -1,4 +1,66 @@
 # Release Notes 
+#V1.0
+
+## Features
+
+- **Player Management**
+  - Add, edit, delete, and import players.
+  - Bulk player import via JSON with validation and error feedback.
+  - Assign players to clans and manage their team types.
+  - Inline editing of player data in the manage cluster view.
+
+- **Clan Management**
+  - Create, edit, and view clans.
+  - Assign/remove players to/from clans, ensuring each player is only in one clan at a time.
+  - Track clan boss levels, hydra/chimera requirements, and CVC thresholds.
+
+- **Activities Tracking**
+  - Record and edit CvC, Hydra, Chimera, and Siege activities for each clan.
+  - Custom forms for each activity type, including date pickers and dropdowns.
+  - Siege position input as a Win/Loss dropdown.
+  - Hydra/Chimera activity supports multi-clan score entry.
+
+- **Siege Plans**
+  - Create, assign, export, and delete siege plans for clans.
+  - Assign players and team types to siege posts.
+
+- **Arena Teams**
+  - Manage arena teams for each player, linked to their available team types.
+
+- **Cluster Dashboard**
+  - Dashboard with summary stats for all clans.
+  - Visual charts for CvC, Hydra, Chimera, and Siege performance over time.
+  - Recent siege plans and quick navigation.
+
+- **User Experience**
+  - Responsive, modern UI with Tailwind CSS and FontAwesome icons.
+  - Modal dialogs for importing players.
+  - Search, filter, and sort functionality for player and clan lists.
+  - Pagination for large player and siege plan lists.
+
+- **Admin & Utilities**
+  - Django admin integration for all models.
+  - Management command to create initial team types.
+  - Utility to remove team types by name or display value.
+
+## Bug Fixes & Improvements
+
+- Robust JSON import with clear error messages for invalid data.
+- Ensured player-clan relationships are always consistent.
+- Improved deletion flows for players, activities, and siege plans.
+- Added date pickers and dropdowns for better data entry.
+- Fixed issues with CSRF token handling in AJAX requests.
+- Improved accessibility and keyboard navigation.
+
+## Upgrade Notes
+
+- Run migrations to update models and fields.
+- Use the management command to initialize team types if upgrading from an earlier version.
+- Review and update your JSON import data to match the documented format.
+
+---
+
+Thank you for using Raid Clan Manager!
 
 # V0.1
 
