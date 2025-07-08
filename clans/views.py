@@ -1,5 +1,7 @@
+import base64
 from decimal import Decimal
 import logging
+import os
 import django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -12,6 +14,10 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
+from django.conf import settings
+import google.generativeai as genai
+import json
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -951,4 +957,51 @@ def update_player_data(request, player_id):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     return JsonResponse({'success': False}, status=400)
+
+@csrf_exempt
+def extract_raid_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
+
+    images = request.FILES.getlist('images')
+
+    if len(images) < 1:
+        return JsonResponse({'error': 'Please provide at least 1 image.'}, status=400)
+
+    results = []
+
+    # Get Google API key from environment variable
+    api_key = os.environ.get("GOOGLE_API_KEY") or getattr(settings, "GOOGLE_API_KEY", None)
+    if not api_key:
+        return JsonResponse({'error': 'Google API key not set in environment variable GOOGLE_API_KEY or settings.'}, status=500)
+    genai.configure(api_key=api_key)
+
+    model = genai.GenerativeModel('gemma-3-27b-it')
+
+    for image in images:
+        image_bytes = image.read()
+        image_parts = [{"mime_type": image.content_type, "data": base64.b64encode(image_bytes).decode()}]
+
+        prompt = (
+            "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. "
+            "The choices should be selected only from this list of valid team types: "
+            f"{TEAM_CHOICES}. "
+            "Return only a JSON object like: {{\"Post\": <number>, \"Choices\": [\"choice1\", \"choice2\", ...]}}."
+        )
+
+        try:
+            response = model.generate_content([prompt, *image_parts])
+            import re
+            raw_text = response.text.strip()
+            match = re.search(r'(\{.*\}|\[.*\])', raw_text, re.DOTALL)
+            if match:
+                json_text = match.group(1)
+                data = json.loads(json_text)
+                results.append(data)
+            else:
+                results.append({'error': f'No JSON found in model response for image {image.name}. Raw response: {raw_text[:200]}'})
+        except Exception as e:
+            results.append({'error': f'Failed to process image {image.name}: {str(e)}'})
+
+    return JsonResponse(results, safe=False)
 

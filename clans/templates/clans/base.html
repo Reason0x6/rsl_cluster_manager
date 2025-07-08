@@ -7,6 +7,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Raid Clan Manager{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='fff'%3E%3Cpath d='M12.5 2c-1.2 0-2.2.7-2.7 1.7-.2.4-.7.5-1 .2-.7-.7-1.8-.7-2.5 0-.7.7-.7 1.8 0 2.5.3.3.2.8-.2 1C3.7 7.8 3 8.8 3 10c0 1.2.7 2.2 1.7 2.7.4.2.5.7.2 1-.7.7-.7 1.8 0 2.5.7.7 1.8.7 2.5 0 .3-.3.8-.2 1 .2.5 1 1.5 1.7 2.7 1.7s2.2-.7 2.7-1.7c.2-.4.7-.5 1-.2.7.7 1.8.7 2.5 0 .7-.7.7-1.8 0-2.5-.3-.3-.2-.8.2-1C20.3 12.2 21 11.2 21 10c0-1.2-.7-2.2-1.7-2.7-.4-.2-.5-.7-.2-1 .7-.7.7-1.8 0-2.5-.7-.7-1.8-.7-2.5 0-.3.3-.8.2-1-.2C14.7 2.7 13.7 2 12.5 2zm0 2c.6 0 1.1.3 1.4.8.5.8 1.7 1 2.4.3.2-.2.5-.2.7 0 .2.2.2.5 0 .7-.7.7-.5 1.9.3 2.4.5.3.8.8.8 1.4s-.3 1.1-.8 1.4c-.8.5-1 1.7-.3 2.4.2.2.2.5 0 .7-.2.2-.5.2-.7 0-.7-.7-1.9-.5-2.4.3-.3.5-.8.8-1.4.8s-1.1-.3-1.4-.8c-.5-.8-1.7-1-2.4-.3-.2.2-.5.2-.7 0-.2-.2-.2-.5 0-.7.7-.7.5-1.9-.3-2.4-.5-.3-.8-.8-.8-1.4s.3-1.1.8-1.4c.8-.5 1-1.7.3-2.4-.2-.2-.2-.5 0-.7.2-.2.5-.2.7 0 .7.7 1.9.5 2.4-.3.3-.5.8-.8 1.4-.8z'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
@@ -131,10 +132,10 @@
                     <i class="fas fa-chess-king w-5 h-5"></i>
                     <span>Manage Cluster</span>
                 </a>
-                <a href="{% url 'la_tracker' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium {% if request.path == '/la-tracker/' %}bg-gray-700 text-white{% else %}text-gray-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-lg">
+                <!-- <a href="{% url 'la_tracker' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium {% if request.path == '/la-tracker/' %}bg-gray-700 text-white{% else %}text-gray-400 hover:bg-gray-700 hover:text-white{% endif %} rounded-lg">
                     <i class="fas fa-shield-alt w-5 h-5"></i>
                     <span>LA Tracker</span>
-                </a>
+                </a> -->
                 {% if user.is_authenticated %}
                 <a href="{% url 'admin:index' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white rounded-lg">
                     <i class="fas fa-cog w-5 h-5"></i>
@@ -169,6 +170,10 @@
                 <div class="flex items-center space-x-3">
                     <button id="menu-toggle" class="lg:hidden text-gray-400 hover:text-white focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <!-- Back Button -->
+                    <button onclick="window.history.back();" title="Back" class="text-gray-400 hover:text-white focus:outline-none mr-2">
+                        <i class="fas fa-arrow-left text-lg"></i>
                     </button>
                     <h2 class="text-lg font-semibold text-gray-200 hidden md:block">
                         <a href="{% url 'home' %}" class="hover:text-purple-400 transition-colors">

@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from django.urls import path
 from django.contrib.auth.views import LogoutView
 from django.contrib.auth import views as auth_views
@@ -66,4 +67,8 @@ urlpatterns = [
     # Login and logout URLs
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', LogoutView.as_view(next_page='/'), name='logout'),
+
+
+    # Extract raid data
+    path('extract/', views.extract_raid_data, name='extract_raid_data'),
 ]

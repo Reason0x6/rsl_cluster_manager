@@ -2,3 +2,6 @@ Django>=3.2,<4.3
 gunicorn
 django-tailwind
 psycopg2-binary
+requests
+pillow
+google-generativeai
