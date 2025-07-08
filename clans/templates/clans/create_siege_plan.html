@@ -5,6 +5,21 @@
 {% block content %}
 <div class="bg-gray-800 p-6 rounded-xl shadow max-w-2xl">
     <h2 class="text-2xl font-semibold text-white mb-4">Create Siege Plan</h2>
+     <div class="bg-gray-700/50 p-4 rounded-lg">
+                <p class="text-sm text-gray-300 mb-2">Example JSON format:</p>
+                <pre class="text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
+                [
+                    {
+                        "Post": number,
+                        "Choices": [
+                            "Condition 1",
+                            "Condition 2",
+                            "Condition 3"
+                        ]
+                    },
+                    ...
+                ]</pre>
+            </div>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}

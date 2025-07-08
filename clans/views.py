@@ -1,3 +1,4 @@
+from decimal import Decimal
 import logging
 import django
 from django.shortcuts import render, get_object_or_404, redirect
@@ -7,12 +8,10 @@ from .models import TEAM_CHOICES, ArenaTeam, Clan, Player, TeamType, CvC, HydraC
 from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm, PlayerManagementForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-import json
-from decimal import Decimal
-from django.db.models import Avg, F
+from django.views.decorators.http import require_http_methods
 
 logger = logging.getLogger(__name__)
 
@@ -373,14 +372,29 @@ def siege_edit(request, siege_id):
     }
     return render(request, 'clans/siege_form.html', context)
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, ensure_csrf_cookie], name='dispatch')
 class PlayerListView(ListView):
     model = Player
     template_name = 'clans/player_list.html'
     context_object_name = 'players'
-    
+
     def get_queryset(self):
         return Player.objects.all().prefetch_related('clans')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = PlayerForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = PlayerForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('player_list')
+        # If invalid, re-render the page with errors and current players
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
 
 @method_decorator(login_required, name='dispatch')
 class PlayerDetailView(DetailView):
@@ -937,4 +951,4 @@ def update_player_data(request, player_id):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     return JsonResponse({'success': False}, status=400)
-                
+

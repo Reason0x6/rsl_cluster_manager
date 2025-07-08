@@ -33,23 +33,24 @@
                                 <!-- Replace the table headers and add data attributes for sorting -->
                                 <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
                                     <tr>
-                                        <th class="px-4 py-2 w-8">
-                                            
+                                        <th class="px-4 py-2 text-left w-8 cursor-pointer   " data-sort="selected">
+                                            <i class="fas fa-sort ml-1"></i> <span class="sort-indicator">▼</span>
                                         </th>
-                                        <th class="px-4 py-2 text-left cursor-pointer hover:text-white" data-sort="name">
-                                            Name <i class="fas fa-sort ml-1"></i>
+                                        <th class="px-4 py-2 text-left cursor-pointer" data-sort="name">
+                                            Name <span class="sort-indicator"></span>
                                         </th>
-                                        <th class="px-4 py-2 text-right cursor-pointer hover:text-white" data-sort="level">
-                                            Level <i class="fas fa-sort ml-1"></i>
-                                        </th>
-                                        <th class="px-4 py-2 text-right cursor-pointer hover:text-white" data-sort="power">
-                                            Power <i class="fas fa-sort ml-1"></i>
+                                        <th class="px-4 py-2 text-right cursor-pointer" data-sort="power">
+                                            Power <span class="sort-indicator"></span>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for choice in field.field.queryset %}
-                                    <tr class="border-b border-gray-700 player-row" data-player-name="{{ choice.name|lower }}">
+                                    <tr class="border-b border-gray-700 player-row"
+                                        data-player-name="{{ choice.name|lower }}"
+                                        data-selected="{% if choice.pk in field.value %}1{% else %}0{% endif %}"
+                                        data-name="{{ choice.name|lower }}"
+                                        data-power="{{ choice.player_power|default:0 }}">
                                         <td class="px-4 py-2">
                                             <label class="inline-flex items-center space-x-3">
                                                 <input type="checkbox" 
@@ -60,7 +61,6 @@
                                             </label>
                                         </td>
                                         <td class="px-4 py-2 text-white">{{ choice.name }}</td>
-                                        <td class="px-4 py-2 text-right text-white">{{ choice.level|default:"--" }}</td>
                                         <td class="px-4 py-2 text-right text-white">{{ choice.player_power|floatformat:2|default:"--" }}M</td>
                                     </tr>
                                     {% endfor %}
@@ -91,29 +91,29 @@
                         {% endfor %}
                     </div>
                 {% else %}
-    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-400 mb-2">
-        {{ field.label }}
-        {% if field.name in 'personal_rewards_cvc_threshold,non_pr_cvc_threshold' %}
-            <span class="text-xs text-gray-500">(points)</span>
-        {% endif %}
-    </label>
-    <div class="relative">
-        {% if field.name == 'personal_rewards_cvc_threshold' or field.name == 'non_pr_cvc_threshold' %}
-            <input type="number" 
-                   name="{{ field.name }}" 
-                   id="{{ field.id_for_label }}"
-                   value="{{ field.value|default:'' }}"
-                   min="0"
-                   step="1000"
-                   class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
-            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                <span class="text-gray-400 text-sm">pts</span>
-            </div>
-        {% else %}
-            {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
-        {% endif %}
-    </div>
-{% endif %}
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-400 mb-2">
+                    {{ field.label }}
+                    {% if field.name in 'personal_rewards_cvc_threshold,non_pr_cvc_threshold' %}
+                        <span class="text-xs text-gray-500">(points)</span>
+                    {% endif %}
+                </label>
+                <div class="relative">
+                    {% if field.name == 'personal_rewards_cvc_threshold' or field.name == 'non_pr_cvc_threshold' %}
+                        <input type="number" 
+                            name="{{ field.name }}" 
+                            id="{{ field.id_for_label }}"
+                            value="{{ field.value|default:'' }}"
+                            min="0"
+                            step="1000"
+                            class="bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5">
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <span class="text-gray-400 text-sm">pts</span>
+                        </div>
+                    {% else %}
+                        {{ field|addclass:"bg-gray-700 border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" }}
+                    {% endif %}
+                </div>
+            {% endif %}
                 
                 {% if field.help_text %}
                     <p class="mt-2 text-xs text-gray-400">{{ field.help_text|safe }}</p>
@@ -137,14 +137,14 @@
         </div>
     </form>
 </div>
-
+<br />
 <!-- Add this right after the search input -->
 <div class="flex">
     <button type="button" 
             onclick="openImportModal()"
             class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 px-4 rounded-lg flex items-center space-x-2">
         <i class="fas fa-file-import"></i>
-        <span>Import Players</span>
+        <span>Bulk Import Players</span>
     </button>
 </div>
 
@@ -161,13 +161,13 @@
             <div class="bg-gray-700/50 p-4 rounded-lg">
                 <p class="text-sm text-gray-300 mb-2">Example JSON format:</p>
                 <pre class="text-xs text-gray-400 bg-gray-800 p-2 rounded overflow-x-auto">
-[
-    {
-        "name": "PlayerName",
-        "player_power": 4.5
-    },
-    ...
-]</pre>
+                [
+                    {
+                        "name": "PlayerName",
+                        "player_power": 4.5
+                    },
+                    ...
+                ]</pre>
             </div>
             <textarea id="jsonInput"
                       class="w-full h-48 bg-gray-700 border-gray-600 text-white text-sm rounded-lg p-3"
@@ -280,6 +280,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Sorting for player table using data-sort/data-* attributes
+    document.querySelectorAll('table').forEach(function(table) {
+        const ths = table.querySelectorAll('th[data-sort]');
+        ths.forEach(function(th) {
+            th.addEventListener('click', function() {
+                const sortKey = th.getAttribute('data-sort');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const asc = !th.classList.contains('sorted-asc');
+                // Remove sort indicators from all headers
+                table.querySelectorAll('.sort-indicator').forEach(span => { span.textContent = ''; });
+                table.querySelectorAll('th').forEach(header => {
+                    header.classList.remove('sorted-asc', 'sorted-desc');
+                });
+                th.classList.add(asc ? 'sorted-asc' : 'sorted-desc');
+                th.querySelector('.sort-indicator').textContent = asc ? '▲' : '▼';
+
+                // Determine if numeric sort
+                const numericSortKeys = ['power', 'selected'];
+                const isNumeric = numericSortKeys.includes(sortKey);
+
+                rows.sort((a, b) => {
+                    let va, vb;
+                    if (isNumeric) {
+                        va = parseFloat(a.getAttribute('data-' + sortKey)) || 0;
+                        vb = parseFloat(b.getAttribute('data-' + sortKey)) || 0;
+                    } else {
+                        va = (a.getAttribute('data-' + sortKey) || '').toLowerCase();
+                        vb = (b.getAttribute('data-' + sortKey) || '').toLowerCase();
+                    }
+                    if (isNumeric) {
+                        return asc ? va - vb : vb - va;
+                    }
+                    return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+                });
+
+                // Re-append sorted rows
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        // Default sort by selected (desc) on page load
+        const selectedTh = table.querySelector('th[data-sort="selected"]');
+        if (selectedTh && !selectedTh.classList.contains('sorted-desc')) {
+            // Simulate click to sort by selected descending
+            selectedTh.click();
+        }
+    });
 
     // Initialize select-all state on page load
     function initializeForm() {
