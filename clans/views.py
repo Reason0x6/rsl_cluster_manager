@@ -95,26 +95,25 @@ def player_create(request):
 @login_required
 def clan_detail(request, clan_id):
     clan = get_object_or_404(Clan, clan_id=clan_id)
-    
+
+    # Defensive: ensure we are not accidentally passing the wrong object to a decorator or function
     # Calculate CvC Performance (wins vs total)
+    activities_config = get_activities_config(clan)
     cvc_records = [
-        record for record in get_activities_config(clan)['CvC']['records']
+        record for record in activities_config['CvC']['records']
     ]
     won_records = [
         record for record in cvc_records if record.score > record.opponent_score
     ]
 
     if cvc_records:
-        # Win is when our score is higher than opponent score
         cvc_performance = (len(won_records) / len(cvc_records)) * 100
     else:
         cvc_performance = Decimal('0')
 
-
     # Calculate Siege Performance (position 1 = win)
     siege_records = clan.siege_records.all()
     if siege_records.exists():
-        # Count records where position is 1 (wins)
         siege_wins = siege_records.filter(position=1).count()
         siege_performance = Decimal(str(siege_wins)) / Decimal(str(siege_records.count())) * 100
     else:
@@ -123,30 +122,24 @@ def clan_detail(request, clan_id):
     # Calculate Hydra Progress
     hydra_clashes = clan.hydra_clashes.all()
     if hydra_clashes.exists():
-        # Calculate average position
         total_positions = sum(clash.rank for clash in hydra_clashes)
         avg_position = Decimal(str(total_positions)) / Decimal(str(hydra_clashes.count()))
-        # Convert to percentage (1st = 100%, 5th = 0%)
-        hydra_progress = max(Decimal('0'), 
-            Decimal('100') * (Decimal('5') - avg_position) / Decimal('4'))
+        hydra_progress = max(Decimal('0'), Decimal('100') * (Decimal('5') - avg_position) / Decimal('4'))
     else:
         hydra_progress = Decimal('0')
 
     # Calculate Chimera Progress
     chimera_clashes = clan.chimera_clashes.all()
     if chimera_clashes.exists():
-        # Calculate average position
         total_positions = sum(clash.rank for clash in chimera_clashes)
         avg_position = Decimal(str(total_positions)) / Decimal(str(chimera_clashes.count()))
-        # Convert to percentage (1st = 100%, 5th = 0%)
-        chimera_progress = max(Decimal('0'), 
-            Decimal('100') * (Decimal('5') - avg_position) / Decimal('4'))
+        chimera_progress = max(Decimal('0'), Decimal('100') * (Decimal('5') - avg_position) / Decimal('4'))
     else:
         chimera_progress = Decimal('0')
 
     context = {
         'clan': clan,
-        'activities_config': get_activities_config(clan),
+        'activities_config': activities_config,
         'cvc_performance': round(float(cvc_performance), 1),
         'hydra_progress': round(float(hydra_progress), 1),
         'chimera_progress': round(float(chimera_progress), 1),
@@ -459,7 +452,6 @@ def delete_player(request, player_uuid):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
 def get_activities_config(clan):
     """
     Returns configuration for clan activities including URLs and records
@@ -945,4 +937,4 @@ def update_player_data(request, player_id):
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     return JsonResponse({'success': False}, status=400)
-
+                
