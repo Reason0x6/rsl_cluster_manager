@@ -1,5 +1,38 @@
 # Release Notes 
 
+# V2.0
+---
+## Summary of Changes
+This major release introduces ClashScore management for Hydra and Chimera activities, enhanced UI/UX for modals, and improved data integrity features. Below are the details for each changed file.
+
+### `models.py`
+* **ClashScore Model**: Added `type` field (choices: "hydra", "chimera") and ForeignKey fields (`hydra_activity`, `chimera_activity`) to reference HydraClash and ChimeraClash activities.
+* **Player Model**: Updated fields for multi-select difficulties and added JSONField for storing additional data.
+
+### `clan_detail.html`
+* **Scores Modal**: Updated modal to be 60% wide, moved JSON input form into an accordion, and added a searchable table for scores.
+* **UI Enhancements**: Improved layout and readability of clan stats and activity records.
+
+### `player_detail.html`
+* **ClashScores Display**: Added a table and Chart.js graph to display player's Hydra and Chimera scores.
+* **Template Logic**: Updated context variable usage for displaying scores by type.
+
+### `player_list.html`
+* **Search Bar**: Made the search bar twice as wide for better usability.
+* **UI Improvements**: Enhanced modal forms for adding and importing players, including detailed JSON examples.
+
+### `views.py`
+* **create_clash_scores Endpoint**: Processes JSON input, links ClashScores to activities and players, and prevents duplicate scores for the same player/activity.
+* **get_activity_scores Endpoint**: Returns scores from related `clash_scores` instead of `opponent_scores`.
+
+### Migrations
+* **0029_clashscore_type_delete_cvcrecord.py**: Added `type` field to ClashScore model and removed unused CvCRecord model.
+* **0030_clashscore_chimera_activity_and_more.py**: Added ForeignKey fields to ClashScore model for linking HydraClash and ChimeraClash activities.
+
+### General Improvements
+* **Django Admin**: Registered ClashScore and all other models for better management.
+* **JavaScript**: Refactored logic for modals and tables to use precomputed JSON data for rendering.
+
 # V1.2
 ---
 ## Summary of Changes
