@@ -70,7 +70,8 @@ urlpatterns = [
 
 
     # Extract raid data
-    path('extract/', views.extract_raid_data, name='extract_raid_data'),
+    path('extract/posts/', views.extract_siege_post_data, name='extract_raid_data'),
+    path('extract/personal_scores/', views.extract_clash_player_data, name='extract_raid_data'),
 
     # Activity Scores API
     path('api/activities/<str:activity_type>/<uuid:record_id>/scores/', views.get_activity_scores, name='get_activity_scores'),

@@ -475,7 +475,7 @@
 </div>
 
 <div id="scoresModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-gray-800 rounded-lg shadow-lg w-[60%] p-6">
+    <div class="bg-gray-800 rounded-lg shadow-lg w-full h-full max-w-[60%] max-h-[60%] overflow-auto p-6">
         <h2 id="modalTitle" class="text-xl font-semibold text-brand-text mb-4">Scores</h2>
         <div class="mb-4">
             <input type="text" id="scoresSearch" placeholder="Search scores..." 
@@ -513,11 +513,36 @@
         <button onclick="saveClashScores()" class="mt-4 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
             Save Scores
         </button>
-        <button onclick="closeScoresModal()" class="mt-4 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
+        <button type="button" onclick="document.getElementById('extractModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg mt-4 mb-4">
+        Extract from Images (AI)
+        </button>
+        <button onclick="closeScoresModal()" class="mt-4 bg-gray-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
             Close
         </button>
     </div>
 </div>
+
+<!-- Extraction Modal -->
+<div id="extractModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-lg relative">
+        <button type="button" onclick="document.getElementById('extractModal').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-white text-xl">&times;</button>
+        <h3 class="text-lg font-semibold text-white mb-2">Extract Siege Plan from Images</h3>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" id="images" name="images" multiple accept="image/*" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2">
+            <div id="paste-area" class="w-full bg-gray-700 text-gray-400 rounded px-3 py-4 mt-2 text-center border border-dashed border-gray-500 cursor-pointer" tabindex="0">
+                <span class="text-xs">Paste images here (Ctrl+V or Cmd+V)</span>
+            </div>
+            <div id="extract-status" class="text-sm text-gray-300 mb-2"></div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg">Extract Data</button>
+        </form>
+        <div class="mt-4">
+            <label class="block text-gray-300 mb-1">Extracted JSON:</label>
+            <textarea id="results" class="w-full bg-gray-900 text-green-300 rounded p-2 text-xs" rows="8" readonly></textarea>
+            <button type="button" onclick="useExtractedJson()" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-xs">Use as Plan Data</button>
+        </div>
+    </div>
+</div>
+
 
 <script>
 function toggleAccordion(button) {
@@ -727,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     playerSearchInput.addEventListener('input', filterPlayers);
     filterPlayers(); // Initial call to show first page of all players
+
 });
 
 function showAllHydraRecords() {
@@ -831,6 +857,107 @@ function showScoresModal(recordId, activityType) {
 function closeScoresModal() {
     const modal = document.getElementById('scoresModal');
     modal.classList.add('hidden');
+}
+
+
+</script>
+
+
+<script>
+const fileInput = document.getElementById('images');
+const pasteArea = document.getElementById('paste-area');
+const dt = new DataTransfer();
+
+pasteArea.addEventListener('paste', function (event) {
+    let found = false;
+    for (const item of event.clipboardData.items) {
+        if (item.type.startsWith('image/')) {
+            const file = item.getAsFile();
+            if (file) {
+                dt.items.add(file);
+                found = true;
+            }
+        }
+    }
+    if (found) {
+        fileInput.files = dt.files;
+        pasteArea.classList.add('border-green-500');
+        setTimeout(() => pasteArea.classList.remove('border-green-500'), 1000);
+    }
+});
+
+pasteArea.addEventListener('click', function () {
+    fileInput.click();
+});
+
+pasteArea.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+        fileInput.click();
+    }
+});
+
+fileInput.addEventListener('change', function () {
+    // When files are selected via input, update DataTransfer as well
+    dt.items.clear();
+    for (let i = 0; i < fileInput.files.length; i++) {
+        dt.items.add(fileInput.files[i]);
+    }
+});
+
+document.getElementById('upload-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const formData = new FormData();
+    const images = fileInput.files;
+    const statusDiv = document.getElementById('extract-status');
+    const resultsTa = document.getElementById('results');
+    statusDiv.textContent = '';
+    resultsTa.value = '';
+
+    if (images.length < 1) {
+        statusDiv.textContent = 'Please select or paste at least 1 image.';
+        return;
+    }
+
+    for (let i = 0; i < images.length; i++) {
+        formData.append('images', images[i]);
+    }
+    formData.append('clan_id', '{{ clan.clan_id }}');
+
+    statusDiv.textContent = 'Extracting...';
+    try {
+        const response = await fetch('/extract/personal_scores/', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) {
+            statusDiv.textContent = 'Extraction failed. Server returned ' + response.status;
+            return;
+        }
+        const results = await response.json();
+        let combined = [];
+        if (Array.isArray(results) && results.every(Array.isArray)) {
+            results.forEach(arr => combined = combined.concat(arr));
+            resultsTa.value = JSON.stringify(combined, null, 2);
+        } else {
+            resultsTa.value = JSON.stringify(results, null, 2);
+        }
+        
+        console.log('Extraction results:',  combined);
+        statusDiv.textContent = 'Extraction complete!';
+    } catch (err) {
+        statusDiv.textContent = 'Error: ' + err.message;
+    }
+});
+
+function useExtractedJson() {
+    const resultsTa = document.getElementById('results');
+    const planDataInput = document.getElementById('clashScoresInput');
+    if (planDataInput) {
+        planDataInput.value = resultsTa.value;
+        document.getElementById('extractModal').classList.add('hidden');
+    } else {
+        alert('Could not find the plan_data field in the form.');
+    }
 }
 </script>
 {% endblock %}
