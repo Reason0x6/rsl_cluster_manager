@@ -6,7 +6,7 @@ import django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
-from .models import TEAM_CHOICES, ArenaTeam, Clan, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
+from .models import TEAM_CHOICES, ArenaTeam, Clan, ClashScore, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
 from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm, PlayerManagementForm
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -61,10 +61,18 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
     arena_teams = ArenaTeam.objects.filter(player=player)
     logger.info(f"{arena_teams}")
             
+    clash_scores_data = {
+        "labels": [f"{score.activity_type} ({score.date_recorded.strftime('%Y-%m-%d')})" for score in player.clash_scores.all()],
+        "hydra_scores": [score.score for score in player.clash_scores.filter(activity_type="Hydra")],
+        "chimera_scores": [score.score for score in player.clash_scores.filter(activity_type="Chimera")],
+    }
+
     context = {
-        'player': player,
-        'arena_teams': arena_teams,
-        'all_team_types': TeamType.objects.all().order_by('name')
+        "player": player,
+        "clash_scores": player.clash_scores.all().order_by("-date_recorded"),
+        "arena_teams": arena_teams,
+        "all_team_types": TeamType.objects.all().order_by("name"),
+        "clash_scores_data": clash_scores_data,
     }
     return render(request, 'clans/player_detail.html', context)
 
@@ -1005,3 +1013,51 @@ def extract_raid_data(request):
 
     return JsonResponse(results, safe=False)
 
+def get_activity_scores(request, activity_type, record_id):
+        if activity_type == 'hydra':
+            try:
+                record = HydraClash.objects.get(hydra_clash_id=record_id)
+                scores = record.opponent_scores  # Assuming this is a dictionary
+                return JsonResponse({'scores': scores})
+            except HydraClash.DoesNotExist:
+                return JsonResponse({'error': 'Record not found'}, status=404)
+            
+        elif activity_type == 'chimera':
+            try:
+                record = ChimeraClash.objects.get(chimera_clash_id=record_id)
+                scores = record.opponent_scores  # Assuming this is a dictionary
+                return JsonResponse({'scores': scores})
+            except HydraClash.DoesNotExist:
+                return JsonResponse({'error': 'Record not found'}, status=404)    
+
+
+@csrf_exempt
+def create_clash_scores(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            activity_type = data.get('activity_type')
+            activity_id = data.get('activity_id')
+            scores = data.get('scores', [])
+
+            if activity_type == 'hydra':
+                activity = HydraClash.objects.get(hydra_clash_id=activity_id)
+            elif activity_type == 'chimera':
+                activity = ChimeraClash.objects.get(chimera_clash_id=activity_id)
+            else:
+                return JsonResponse({'error': 'Invalid activity type'}, status=400)
+
+            for score_data in scores:
+                print(score_data)
+                player_id = score_data.get('Name')
+                score = score_data.get('Score')
+                keys_used = score_data.get('Keys used')
+                player = Player.objects.get(name=player_id)
+                clash_score = ClashScore.objects.create(player=player, score=score, keys_used=keys_used, date_recorded=activity.date_recorded)
+                                 
+                activity.clash_scores.add(clash_score)
+
+            return JsonResponse({'message': 'ClashScores created successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

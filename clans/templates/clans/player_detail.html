@@ -172,7 +172,77 @@
         </div>
     </div>
 
+    <!-- Player Clash Scores -->
+    <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+        <h2 class="text-lg font-semibold text-white mb-4">Player Clash Scores</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-400">
+                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                    <tr>
+                        <th class="px-4 py-3">Activity Type</th>
+                        <th class="px-4 py-3">Score</th>
+                        <th class="px-4 py-3">Date Recorded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in clash_scores %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                        <td class="px-4 py-3">{{ score.activity_type }}</td>
+                        <td class="px-4 py-3">{{ score.score|default:"N/A" }}</td>
+                        <td class="px-4 py-3">{{ score.date_recorded|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6">
+            <canvas id="clashScoresChart" class="w-full h-64"></canvas>
+        </div>
+    </div>
+
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('clashScoresChart').getContext('2d');
+
+            const clashScoresData = {
+                labels: JSON.parse("{{ clash_scores_data.labels|escapejs }}"),
+                datasets: [
+                    {
+                        label: 'Hydra Scores',
+                        data: JSON.parse("{{ clash_scores_data.hydra_scores|escapejs }}"),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Chimera Scores',
+                        data: JSON.parse("{{ clash_scores_data.chimera_scores|escapejs }}"),
+                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: clashScoresData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Player Clash Scores by Type'
+                        }
+                    }
+                }
+            });
+        });
+
         function openModal() {
             document.getElementById('teamModal').classList.remove('hidden');
         }

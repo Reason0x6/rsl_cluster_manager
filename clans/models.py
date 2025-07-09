@@ -4,6 +4,7 @@ from django.utils import timezone # For potential date fields
 from django.core.validators import MinValueValidator, MaxValueValidator
 import json
 from django.contrib.postgres.fields import JSONField  # For storing JSON data
+from django.contrib import admin
 
 class Player(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -226,6 +227,7 @@ class HydraClash(models.Model):
     clan = models.ForeignKey(Clan, on_delete=models.CASCADE, related_name='hydra_clashes')
     opponent_scores = models.JSONField(default=dict)
     date_recorded = models.DateTimeField(default=timezone.now)
+    clash_scores = models.ManyToManyField('ClashScore', related_name='hydra_clashes', blank=True, limit_choices_to={'clash_scores__count__lte': 30})
 
     class Meta:
         ordering = ['-date_recorded']
@@ -274,6 +276,7 @@ class ChimeraClash(models.Model):
     clan = models.ForeignKey(Clan, on_delete=models.CASCADE, related_name='chimera_clashes')
     opponent_scores = models.JSONField(default=dict)
     date_recorded = models.DateTimeField(default=timezone.now)
+    clash_scores = models.ManyToManyField('ClashScore', related_name='chimera_clashes', blank=True, limit_choices_to={'clash_scores__count__lte': 30})
 
     class Meta:
         ordering = ['-date_recorded']
@@ -412,27 +415,6 @@ class TeamType(models.Model):
             return True
         return False
 
-class CvCRecord(models.Model):
-    clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='cvc_records')
-    date_recorded = models.DateField()
-    opponent = models.CharField(max_length=100)
-    score = models.IntegerField()
-    opponent_score = models.IntegerField()
-    personal_rewards = models.BooleanField(default=False)
-    tier = models.CharField(max_length=50)
-
-    class Meta:
-        ordering = ['-date_recorded']
-
-class HydraRecord(models.Model):
-    clan = models.ForeignKey('Clan', on_delete=models.CASCADE, related_name='hydra_history')  # Changed from hydra_records
-    date_recorded = models.DateField()
-    score = models.FloatField()
-    difficulty = models.CharField(max_length=50)
-
-    class Meta:
-        ordering = ['-date_recorded']
-
 class LABattle(models.Model):
     battle_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='la_battles')
@@ -481,3 +463,35 @@ class ArenaTeam(models.Model):
 
     def __str__(self):
         return f"{self.team_type} - {self.player.name}"
+
+class ClashScore(models.Model):
+    player = models.ForeignKey('Player', on_delete=models.CASCADE, related_name='clash_scores')
+    score = models.DecimalField(
+        max_digits=7,  # Allows numbers up to 9999.999 billion
+        decimal_places=3,
+        help_text="Score in billions (e.g., 1.5 for 1.5B)"
+    )
+    keys_used = models.PositiveIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(3)],
+        help_text="Number of keys used (0 to 3)"
+    )
+    date_recorded = models.DateTimeField(default=timezone.now, help_text="Date when the score was recorded")
+
+    class Meta:
+        ordering = ['-date_recorded']
+
+    def __str__(self):
+        return f"{self.player.name} - {self.score}B ({self.keys_used} keys)"
+
+class ClashScoreAdmin(admin.ModelAdmin):
+    list_display = ('player', 'score', 'keys_used', 'date_recorded')
+    search_fields = ('player__name',)
+    list_filter = ('date_recorded',)
+
+admin.site.register(ClashScore, ClashScoreAdmin)
+
+# Register all models in the admin panel
+admin.site.register(LABattle)
+admin.site.register(SiegePlan)
+admin.site.register(PostAssignment)
+admin.site.register(ArenaTeam)
