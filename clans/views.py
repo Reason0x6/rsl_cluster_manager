@@ -2,7 +2,6 @@ import base64
 from decimal import Decimal
 import logging
 import os
-import django
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
@@ -16,8 +15,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 import google.generativeai as genai
+import jsonschema
 import json
 import os
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -537,7 +538,6 @@ def import_players(request):
         else:
             body = request.body
         body = body.lstrip('\ufeff').strip()
-        import re
         # Remove trailing commas before closing brackets/braces
         body = re.sub(r',(\s*[\]}])', r'\1', body)
         # Fix typo: "UMN" -> "UNM"
@@ -966,40 +966,26 @@ def update_player_data(request, player_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=400)
     return JsonResponse({'success': False}, status=400)
 
-@csrf_exempt
-def extract_raid_data(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
-
-    images = request.FILES.getlist('images')
-
+def extract_raid_data_service(images, prompt, model_name='gemma-3-27b-it'):
     if len(images) < 1:
-        return JsonResponse({'error': 'Please provide at least 1 image.'}, status=400)
+        return {'error': 'Please provide at least 1 image.', 'status': 400}
 
     results = []
 
     # Get Google API key from environment variable
     api_key = os.environ.get("GOOGLE_API_KEY") or getattr(settings, "GOOGLE_API_KEY", None)
     if not api_key:
-        return JsonResponse({'error': 'Google API key not set in environment variable GOOGLE_API_KEY or settings.'}, status=500)
+        return {'error': 'Google API key not set in environment variable GOOGLE_API_KEY or settings.', 'status': 500}
     genai.configure(api_key=api_key)
 
-    model = genai.GenerativeModel('gemma-3-27b-it')
+    model = genai.GenerativeModel(model_name)
 
     for image in images:
         image_bytes = image.read()
         image_parts = [{"mime_type": image.content_type, "data": base64.b64encode(image_bytes).decode()}]
 
-        prompt = (
-            "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. There should be a post number and a list of exactly 3 choices. "
-            "The choices should be selected only from this list of valid team types: "
-            f"{TEAM_CHOICES}. "
-            "Return only a JSON object like: {{\"Post\": <number>, \"Choices\": [\"choice1\", \"choice2\", ...]}}."
-        )
-
         try:
             response = model.generate_content([prompt, *image_parts])
-            import re
             raw_text = response.text.strip()
             match = re.search(r'(\{.*\}|\[.*\])', raw_text, re.DOTALL)
             if match:
@@ -1007,11 +993,103 @@ def extract_raid_data(request):
                 data = json.loads(json_text)
                 results.append(data)
             else:
-                results.append({'error': f'No JSON found in model response for image {image.name}. Raw response: {raw_text[:200]}'})
+                results.append({'error': f'No JSON found in model response for image {image.name}. Raw response: {raw_text[:200]}', 'status': 400})
         except Exception as e:
-            results.append({'error': f'Failed to process image {image.name}: {str(e)}'})
+            results.append({'error': f'Failed to process image {image.name}: {str(e)}', 'status': 500})
 
-    return JsonResponse(results, safe=False)
+    return {'results': results, 'status': 200}
+
+@csrf_exempt
+# Request should include 'images' as a list of uploaded images
+def extract_siege_post_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
+
+    images = request.FILES.getlist('images')
+
+    prompt = (
+        "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. There should be a post number and a list of exactly 3 choices. "
+        "The choices should be selected only from this list of valid team types: "
+        f"{[choice[0] for choice in TEAM_CHOICES]}. "
+        "Return only a JSON object like: {{\"Post\": <number>, \"Choices\": [\"choice1\", \"choice2\", ...]}}."
+    )
+
+    service_response = extract_raid_data_service(images, prompt)
+    if 'error' in service_response:
+        return JsonResponse({'error': service_response['error']}, status=service_response['status'])
+
+   
+
+    return JsonResponse(service_response['results'], safe=False)
+
+@csrf_exempt
+# Request should include 'images' as a list of uploaded images and 'clan_id' as a POST parameter
+def extract_clash_player_data(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
+
+    images = request.FILES.getlist('images')
+    clanPlayers = [player.name for player in Clan.objects.get(clan_id=request.POST.get('clan_id')).players.all()]
+    print(clanPlayers)
+
+    json_schema_string = """
+            {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "List of User Accounts",
+            "description": "A list of user accounts.",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                "Name": {
+                    "type": "string"
+                },
+                "Score": {
+                    "type": "number"
+                },
+                "Keys used": {
+                    "type": "integer",
+                    "enum": [0, 1, 2, 3]
+                }
+                },
+                "required": [
+                "Name",
+                "Score",
+                "Keys used"
+                ]
+            }
+            }
+            """
+    
+    prompt = f"""
+        Extract the Player name, score and keys used, per player, from these images of a Raid Shadow Legends Clash Results page. 
+        Scores are shown in the format "<decimal>B" (e.g. "1.5B" for 1.5 billion). and will only ever be 2 decimal places followed by "B" (billions) or "M" Millions.
+        Make sure to convert the score to a decimal number, e.g. "1.5B" should be converted to 1500000000, and "150.5M" should be converted to 1505000000.
+        Then format the score as a decimal with the unit strictly Billions (e.g. 1500000000 should be formatted as 1.5, 1505000000 should be formatted as 0.1505). 
+        The keys used are shown as a number from 0 to 3, representing the number of keys used by the player.
+        The results should be returned as a JSON array of objects, each with "Name", "Score" and "Keys used" fields.
+        The "Name" field should be the player's name, the "Score" field should be a decimal number, and the "Keys used" field should be an integer.
+        The player names should be selected only from this list of valid players: 
+        {clanPlayers}. 
+        if a player is not in this list, they should not be included in the results.
+        if a player is in the list but has no score, they should be included with a score of 0 and keys used of 0.
+        Return only a JSON object that fits the following schema:
+        {json_schema_string}
+        
+    """
+    service_response = extract_raid_data_service(images, prompt)
+    if 'error' in service_response:
+        return JsonResponse({'error': service_response['error']}, status=service_response['status'])
+
+     # Validate results against the JSON schema
+    # try:
+    #     schema = json.loads(json_schema_string)
+    #     jsonschema.validate(instance=service_response['results'], schema=schema)
+    # except Exception as e:
+    #     return JsonResponse({'error': f'Result does not fit the JSON schema: {str(e)}'}, status=400)
+
+    return JsonResponse(service_response['results'], safe=False)
+
 
 def get_activity_scores(request, activity_type, record_id):
         if activity_type == 'hydra':

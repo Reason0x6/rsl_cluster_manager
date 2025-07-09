@@ -117,7 +117,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
 
     statusDiv.textContent = 'Extracting...';
     try {
-        const response = await fetch('/extract/', {
+        const response = await fetch('/extract/posts/', {
             method: 'POST',
             body: formData
         });
