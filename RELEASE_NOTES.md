@@ -10,7 +10,7 @@ This major release introduces ClashScore management for Hydra and Chimera activi
 * **Player Model**: Updated fields for multi-select difficulties and added JSONField for storing additional data.
 
 ### `clan_detail.html`
-* **Scores Modal**: Updated modal to be 60% wide, moved JSON input form into an accordion, and added a searchable table for scores.
+* **Scores Modal**: Updated modal to be full-screen and scrollable, moved JSON input form into an accordion, and added a searchable table for scores.
 * **UI Enhancements**: Improved layout and readability of clan stats and activity records.
 
 ### `player_detail.html`
@@ -25,6 +25,10 @@ This major release introduces ClashScore management for Hydra and Chimera activi
 * **create_clash_scores Endpoint**: Processes JSON input, links ClashScores to activities and players, and prevents duplicate scores for the same player/activity.
 * **get_activity_scores Endpoint**: Returns scores from related `clash_scores` instead of `opponent_scores`.
 
+### `generic_activity_form.html`
+* **Opponent Scores**: Updated input fields to allow decimal values for scores.
+* **JavaScript Logic**: Enhanced `updateScores` function to ensure scores are stored as decimals.
+
 ### Migrations
 * **0029_clashscore_type_delete_cvcrecord.py**: Added `type` field to ClashScore model and removed unused CvCRecord model.
 * **0030_clashscore_chimera_activity_and_more.py**: Added ForeignKey fields to ClashScore model for linking HydraClash and ChimeraClash activities.
@@ -32,6 +36,8 @@ This major release introduces ClashScore management for Hydra and Chimera activi
 ### General Improvements
 * **Django Admin**: Registered ClashScore and all other models for better management.
 * **JavaScript**: Refactored logic for modals and tables to use precomputed JSON data for rendering.
+* **Extraction Modal**: Added AI-based data extraction modal for images on the clan details page.
+* **Backend Extraction Endpoint**: Updated to show actual player names in prompts and POST clan ID for extraction endpoints.
 
 # V1.2
 ---
