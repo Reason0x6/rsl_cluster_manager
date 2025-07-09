@@ -62,9 +62,9 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
     logger.info(f"{arena_teams}")
             
     clash_scores_data = {
-        "labels": [f"{score.activity_type} ({score.date_recorded.strftime('%Y-%m-%d')})" for score in player.clash_scores.all()],
-        "hydra_scores": [score.score for score in player.clash_scores.filter(activity_type="Hydra")],
-        "chimera_scores": [score.score for score in player.clash_scores.filter(activity_type="Chimera")],
+        "labels": [f"{score.type} ({score.date_recorded.strftime('%Y-%m-%d')})" for score in player.clash_scores.all()],
+        "hydra_scores": [score.score for score in player.clash_scores.filter(type="hydra")],
+        "chimera_scores": [score.score for score in player.clash_scores.filter(type="chimera")],
     }
 
     context = {
@@ -991,7 +991,7 @@ def extract_raid_data(request):
         image_parts = [{"mime_type": image.content_type, "data": base64.b64encode(image_bytes).decode()}]
 
         prompt = (
-            "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. "
+            "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. There should be a post number and a list of exactly 3 choices. "
             "The choices should be selected only from this list of valid team types: "
             f"{TEAM_CHOICES}. "
             "Return only a JSON object like: {{\"Post\": <number>, \"Choices\": [\"choice1\", \"choice2\", ...]}}."
@@ -1017,19 +1017,19 @@ def get_activity_scores(request, activity_type, record_id):
         if activity_type == 'hydra':
             try:
                 record = HydraClash.objects.get(hydra_clash_id=record_id)
-                scores = record.opponent_scores  # Assuming this is a dictionary
-                return JsonResponse({'scores': scores})
             except HydraClash.DoesNotExist:
                 return JsonResponse({'error': 'Record not found'}, status=404)
             
         elif activity_type == 'chimera':
             try:
                 record = ChimeraClash.objects.get(chimera_clash_id=record_id)
-                scores = record.opponent_scores  # Assuming this is a dictionary
-                return JsonResponse({'scores': scores})
             except HydraClash.DoesNotExist:
                 return JsonResponse({'error': 'Record not found'}, status=404)    
-
+        else:
+            return JsonResponse({'error': 'Invalid activity type'}, status=400)
+        
+        scores = record.clash_scores.values('player__name', 'score', 'keys_used', 'type')
+        return JsonResponse({'scores': list(scores)})
 
 @csrf_exempt
 def create_clash_scores(request):
@@ -1053,8 +1053,28 @@ def create_clash_scores(request):
                 score = score_data.get('Score')
                 keys_used = score_data.get('Keys used')
                 player = Player.objects.get(name=player_id)
-                clash_score = ClashScore.objects.create(player=player, score=score, keys_used=keys_used, date_recorded=activity.date_recorded)
-                                 
+
+                # Check for existing ClashScore to prevent duplicates
+                existing_score = ClashScore.objects.filter(
+                    type=activity_type,
+                    player=player,
+                    hydra_activity=activity if activity_type == 'hydra' else None,
+                    chimera_activity=activity if activity_type == 'chimera' else None
+                ).first()
+
+                if existing_score:
+                    continue
+
+                clash_score = ClashScore.objects.create(
+                    type=activity_type,
+                    player=player,
+                    score=score,
+                    keys_used=keys_used,
+                    date_recorded=activity.date_recorded,
+                    hydra_activity=activity if activity_type == 'hydra' else None,
+                    chimera_activity=activity if activity_type == 'chimera' else None
+                )
+
                 activity.clash_scores.add(clash_score)
 
             return JsonResponse({'message': 'ClashScores created successfully'})

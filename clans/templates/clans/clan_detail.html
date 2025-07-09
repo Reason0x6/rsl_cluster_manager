@@ -475,14 +475,41 @@
 </div>
 
 <div id="scoresModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-gray-800 rounded-lg shadow-lg w-96 p-6">
+    <div class="bg-gray-800 rounded-lg shadow-lg w-[60%] p-6">
         <h2 id="modalTitle" class="text-xl font-semibold text-brand-text mb-4">Scores</h2>
-        <div id="modalContent" class="text-gray-400">
-            <!-- Scores will be dynamically loaded here -->
+        <div class="mb-4">
+            <input type="text" id="scoresSearch" placeholder="Search scores..." 
+                   class="w-full bg-gray-700 text-white text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple-500">
+        </div>
+        <div id="modalContent" class="overflow-x-auto">
+            <table id="scoresTable" class="w-full text-sm text-left text-gray-400">
+                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                    <tr>
+                        <th class="px-4 py-3">Player Name</th>
+                        <th class="px-4 py-3">Score</th>
+                        <th class="px-4 py-3">Keys Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Scores will be dynamically loaded here -->
+                </tbody>
+            </table>
+        </div>
+        <div id="modalWarnContent" class="text-gray-400">
         </div>
         <input type="hidden" id="recordId">
         <input type="hidden" id="activityType">
-        <textarea id="clashScoresInput" class="w-full bg-gray-700 text-white rounded-lg p-4 mt-4" rows="5" placeholder='Enter JSON data for ClashScores'></textarea>
+        <br />
+        <!-- Accordion for JSON input -->
+        <div class="accordion">
+            <button class="accordion-button bg-gray-700 text-white rounded-lg px-4 py-2 w-full text-left" onclick="toggleAccordion(this)">
+                Enter JSON data for ClashScores
+            </button>
+            <div class="accordion-content hidden">
+                <textarea id="clashScoresInput" class="w-full bg-gray-700 text-white rounded-lg p-4 mt-4" rows="5" placeholder='Enter JSON data for ClashScores'></textarea>
+            </div>
+        </div>
+
         <button onclick="saveClashScores()" class="mt-4 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg">
             Save Scores
         </button>
@@ -493,6 +520,11 @@
 </div>
 
 <script>
+function toggleAccordion(button) {
+    const content = button.nextElementSibling;
+    content.classList.toggle('hidden');
+}
+
 document.getElementById('clashScoresInput').placeholder = JSON.stringify([
     {
         "Name": "WoR",
@@ -714,7 +746,7 @@ function showAllChimeraRecords() {
 
 function saveClashScores() {
     const input = document.getElementById('clashScoresInput').value;
-    const modalContent = document.getElementById('modalContent');
+    const modalWarnContent = document.getElementById('modalWarnContent');
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
     try {
@@ -737,26 +769,35 @@ function saveClashScores() {
         })
         .then(response => {
             if (response.ok) {
-                modalContent.innerHTML = '<p class="text-green-500 text-center">Scores saved successfully!</p>';
+                modalWarnContent.innerHTML = '<p class="text-green-500 text-center">Scores saved successfully!</p>';
             } else {
                 throw new Error(`Server returned ${response.status}`);
             }
         })
         .catch(error => {
             console.error('Error saving scores:', error);
-            modalContent.innerHTML = '<p class="text-red-500 text-center">Failed to save scores.</p>';
+            modalWarnContent.innerHTML = '<p class="text-red-500 text-center">Failed to save scores.</p>';
         });
     } catch (error) {
         console.error('Invalid JSON:', error);
-        modalContent.innerHTML = '<p class="text-red-500 text-center">Invalid JSON format.</p>';
+        modalWarnContent.innerHTML = '<p class="text-red-500 text-center">Invalid JSON format.</p>';
     }
 }
+
+document.getElementById('scoresSearch').addEventListener('input', function () {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#scoresTable tbody tr');
+    rows.forEach(row => {
+        const playerName = row.querySelector('td:first-child').textContent.toLowerCase();
+        const matches = playerName.includes(searchTerm);
+        row.style.display = matches ? '' : 'none';
+    });
+});
 
 function showScoresModal(recordId, activityType) {
     const modal = document.getElementById('scoresModal');
     const modalTitle = document.getElementById('modalTitle');
-    const modalContent = document.getElementById('modalContent');
-    const clashScoresInput = document.getElementById('clashScoresInput');
+    const scoresTableBody = document.querySelector('#scoresTable tbody');
 
     // Fill hidden inputs for recordId and activityType
     const recordIdInput = document.getElementById('recordId');
@@ -770,19 +811,18 @@ function showScoresModal(recordId, activityType) {
     fetch(`/api/activities/${activityType}/${recordId}/scores/`)
         .then(response => response.json())
         .then(data => {
-            const scoresContent = Object.entries(data.scores)
-                .map(([clanName, clanScore]) => `
-                    <div class="flex justify-between">
-                        <span>${clanName}</span>
-                        <span>${clanScore.toFixed(3)}B</span>
-                    </div>
-                `)
-                .join('');
-            modalContent.innerHTML = scoresContent;
+            const rowsContent = data.scores.map(score => `
+                <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                    <td class="px-4 py-3">${score.player__name}</td>
+                    <td class="px-4 py-3">${score.score}B</td>
+                    <td class="px-4 py-3">${score.keys_used}</td>
+                </tr>
+            `).join('');
+            scoresTableBody.innerHTML = rowsContent;
         })
         .catch(error => {
             console.error('Error fetching scores:', error);
-            modalContent.innerHTML = '<p class="text-red-500 text-center">Failed to load scores.</p>';
+            scoresTableBody.innerHTML = '<tr><td colspan="3" class="text-red-500 text-center">Failed to load scores.</td></tr>';
         });
 
     modal.classList.remove('hidden');

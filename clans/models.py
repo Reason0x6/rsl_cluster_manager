@@ -476,6 +476,27 @@ class ClashScore(models.Model):
         help_text="Number of keys used (0 to 3)"
     )
     date_recorded = models.DateTimeField(default=timezone.now, help_text="Date when the score was recorded")
+    type = models.CharField(
+        max_length=20,
+        choices=[('hydra', 'Hydra'), ('chimera', 'Chimera')],
+        help_text="Type of clash score (Hydra or Chimera)"
+    )
+    hydra_activity = models.ForeignKey(
+        'HydraClash',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='hydra_clash_scores',
+        help_text="Hydra Clash activity associated with this score"
+    )
+    chimera_activity = models.ForeignKey(
+        'ChimeraClash',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='chimera_clash_scores',
+        help_text="Chimera Clash activity associated with this score"
+    )
 
     class Meta:
         ordering = ['-date_recorded']
