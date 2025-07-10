@@ -19,6 +19,7 @@ import jsonschema
 import json
 import os
 import re
+from django.db.models import Avg
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,10 @@ def clan_detail(request, clan_id):
     else:
         chimera_progress = Decimal('0')
 
+    hydra_scores = [clash.get_clan_score() for clash in clan.hydra_clashes.all()]
+    hydra_avg = sum(hydra_scores) / len(hydra_scores) if hydra_scores else None
+    chimera_scores = [clash.get_clan_score() for clash in clan.chimera_clashes.all()]
+    chimera_avg = sum(chimera_scores) / len(chimera_scores) if chimera_scores else None
     context = {
         'clan': clan,
         'activities_config': activities_config,
@@ -158,6 +163,8 @@ def clan_detail(request, clan_id):
         'hydra_progress': round(float(hydra_progress), 1),
         'chimera_progress': round(float(chimera_progress), 1),
         'siege_performance': round(float(siege_performance), 1),
+        'hydra_avg': hydra_avg,
+        'chimera_avg': chimera_avg,
     }
     return render(request, 'clans/clan_detail.html', context)
 
@@ -968,7 +975,7 @@ def update_player_data(request, player_id):
 
 def extract_raid_data_service(images, prompt, model_name='gemma-3-27b-it'):
     if len(images) < 1:
-        return {'error': 'Please provide at least 1 image.', 'status': 400}
+        return {'error': 'Please provide at least 1 image.', 'status': 400} 
 
     results = []
 

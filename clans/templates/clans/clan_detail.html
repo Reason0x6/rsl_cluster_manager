@@ -35,7 +35,7 @@
         </div>
 
         <!-- Minimal, compact stats cards -->
-        <div class="flex flex-wrap justify-center gap-2 border-t border-brand-border py-2 bg-gray-800/50">
+        <div class="flex flex-wrap justify-center gap-2 border-t border-brand-border py-4 mb-4 bg-gray-800/50">
             <div class="flex flex-col items-center px-3 py-2 bg-gray-900/60 rounded text-xs min-w-[180px]">
                 <span class="font-bold text-lg">{{ clan.players.all|length }}</span>
                 <span class="text-gray-400">Members</span>
@@ -45,17 +45,26 @@
                 <span class="text-gray-400">Power</span>
             </div>
             <div class="flex flex-col items-center px-3 py-2 bg-gray-900/60 rounded text-xs min-w-[180px]">
-                <span class="font-bold text-lg">{{ clan.hydra_clash_required_score|floatformat:1 }}B</span>
-                <span class="text-gray-400">Hydra</span>
+                <span class="font-bold text-lg">
+                    {% if hydra_avg %}
+                        {{ hydra_avg|floatformat:1 }}B
+                    {% else %}
+                       --
+                    {% endif %}
+                </span>
+                <span class="text-gray-400">Clan Hydra Avg</span>
             </div>
             <div class="flex flex-col items-center px-3 py-2 bg-gray-900/60 rounded text-xs min-w-[180px]">
-                <span class="font-bold text-lg">{{ clan.chimera_clash_required_score|floatformat:1 }}B</span>
-                <span class="text-gray-400">Chimera</span>
+                <span class="font-bold text-lg">{% if chimera_avg %}
+                        {{ chimera_avg|floatformat:1 }}B
+                    {% else %}
+                        --
+                    {% endif %}</span>
+                <span class="text-gray-400">Clan Chimera Avg</span>
             </div>
         </div>
 
         <!-- Progress Section -->
-        <div class="bg-gray-800/50 p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- CvC Performance -->
                 <div class="space-y-2">
@@ -65,7 +74,7 @@
                     </div>
                     <div class="h-2.5 rounded-full bg-gray-700">
                         <div class="h-2.5 rounded-full {% if cvc_performance >= 80 %}bg-green-500{% elif cvc_performance >= 60 %}bg-yellow-500{% elif cvc_performance >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
-                             style="width: {{ cvc_performance }}%"></div>
+                             style="width: {{ cvc_performance|floatformat:1 }}%;"></div>
                     </div>
                     <p class="text-xs text-brand-text-muted">Based on win rate (our score > opponent score)</p>
                 </div>
@@ -78,7 +87,7 @@
                     </div>
                     <div class="h-2.5 rounded-full bg-gray-700">
                         <div class="h-2.5 rounded-full {% if hydra_progress >= 80 %}bg-green-500{% elif hydra_progress >= 60 %}bg-yellow-500{% elif hydra_progress >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
-                             style="width: {{ hydra_progress }}%"></div>
+                             style="width: {{ hydra_progress|floatformat:1 }}%;"></div>
                     </div>
                     <p class="text-xs text-brand-text-muted">Based on average placement (1st = 100%)</p>
                 </div>
@@ -91,7 +100,7 @@
                     </div>
                     <div class="h-2.5 rounded-full bg-gray-700">
                         <div class="h-2.5 rounded-full {% if chimera_progress >= 80 %}bg-green-500{% elif chimera_progress >= 60 %}bg-yellow-500{% elif chimera_progress >= 40 %}bg-orange-500{% else %}bg-red-500{% endif %} transition-all duration-500" 
-                             style="width: {{ chimera_progress }}%"></div>
+                             style="width: {{ chimera_progress|floatformat:1 }}%;"></div>
                     </div>
                     <p class="text-xs text-brand-text-muted">Based on average placement (1st = 100%)</p>
                 </div>
@@ -104,7 +113,7 @@
                     </div>
                     <div class="h-2.5 rounded-full bg-gray-700">
                         <div class="h-2.5 rounded-full bg-yellow-500 transition-all duration-500" 
-                             style="width: {{ siege_performance }}%"></div>
+                             style="width: {{ siege_performance|floatformat:1 }}%;"></div>
                     </div>
                     <p class="text-xs text-brand-text-muted">Based on win rate</p>
                 </div>
@@ -374,7 +383,7 @@
                                 <tr>
                                     <th class="px-4 py-3">Name</th>
                                     <th class="px-4 py-3">Optimiser Link</th>
-                                    <th class="px-4 py-3">Team Types</th> <!-- New column for Team Types -->
+                                    <th class="px-4 py-3">Team Types</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -397,7 +406,12 @@
                                 </td>
                                    <td class="px-4 py-3">
                                         {% if player.team_types.exists %}
-                                            {{ player.team_types.all|join:", " }}
+                                            {% with team_types=player.team_types.all|slice:":5" %}
+                                                {{ team_types|join:", " }}
+                                                {% if player.team_types.count > 5 %}
+                                                    ...
+                                                {% endif %}
+                                            {% endwith %}
                                         {% else %}
                                             <span class="text-gray-400">No teams assigned</span>
                                         {% endif %}
@@ -529,7 +543,8 @@
 <div id="extractModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
     <div class="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-lg relative">
         <button type="button" onclick="document.getElementById('extractModal').classList.add('hidden')" class="absolute top-2 right-2 text-gray-400 hover:text-white text-xl">&times;</button>
-        <h3 class="text-lg font-semibold text-white mb-2">Extract Siege Plan from Images</h3>
+        <h3 class="text-lg font-semibold text-white mb-2">Extract Personal Scores from Images</h3>
+        <p><em>Please supply images of the results screen, with no more than 6 scores per photo</em></p>
         <form id="upload-form" enctype="multipart/form-data">
             <input type="file" id="images" name="images" multiple accept="image/*" class="w-full bg-gray-700 text-white rounded px-3 py-2 mb-2">
             <div id="paste-area" class="w-full bg-gray-700 text-gray-400 rounded px-3 py-4 mt-2 text-center border border-dashed border-gray-500 cursor-pointer" tabindex="0">
@@ -541,7 +556,7 @@
         <div class="mt-4">
             <label class="block text-gray-300 mb-1">Extracted JSON:</label>
             <textarea id="results" class="w-full bg-gray-900 text-green-300 rounded p-2 text-xs" rows="8" readonly></textarea>
-            <button type="button" onclick="useExtractedJson()" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-xs">Use as Plan Data</button>
+            <button type="button" onclick="useExtractedJson()" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-xs">Use as Score Data</button>
         </div>
     </div>
 </div>
@@ -786,7 +801,7 @@ function saveClashScores() {
 
         fetch('/api/clash-scores/', {
             method: 'POST',
-            headers: {
+             headers: {
                 'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json',
             },
@@ -926,7 +941,7 @@ document.getElementById('upload-form').addEventListener('submit', async function
     }
     formData.append('clan_id', '{{ clan.clan_id }}');
 
-    statusDiv.textContent = 'Extracting...';
+    statusDiv.textContent = 'Extracting... This may take a minute';
     try {
         const response = await fetch('/extract/personal_scores/', {
             method: 'POST',

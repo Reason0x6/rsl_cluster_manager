@@ -271,6 +271,13 @@ class HydraClash(models.Model):
         except Exception:
             return 0
 
+    def get_clan_score(self):
+        """Return the clan's score from the opponent_scores JSON field."""
+        try:
+            return float(self.opponent_scores.get(self.clan.name, 0))
+        except (ValueError, TypeError):
+            return 0
+
 class ChimeraClash(models.Model):
     chimera_clash_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     clan = models.ForeignKey(Clan, on_delete=models.CASCADE, related_name='chimera_clashes')
@@ -319,7 +326,13 @@ class ChimeraClash(models.Model):
             return len(scores)
         except Exception:
             return 0
-
+        
+    def get_clan_score(self):
+        """Return the clan's score from the opponent_scores JSON field."""
+        try:
+            return float(self.opponent_scores.get(self.clan.name, 0))
+        except (ValueError, TypeError):
+            return 0
 TEAM_CHOICES = [
     # Factions
     ('banner_lords', 'Banner Lords'),
