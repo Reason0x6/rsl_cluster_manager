@@ -1091,13 +1091,6 @@ def extract_clash_player_data(request):
     if 'error' in service_response:
         return JsonResponse({'error': service_response['error']}, status=service_response['status'])
 
-     # Validate results against the JSON schema
-    # try:
-    #     schema = json.loads(json_schema_string)
-    #     jsonschema.validate(instance=service_response['results'], schema=schema)
-    # except Exception as e:
-    #     return JsonResponse({'error': f'Result does not fit the JSON schema: {str(e)}'}, status=400)
-
     return JsonResponse(service_response['results'], safe=False)
 
 
