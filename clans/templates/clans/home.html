@@ -139,10 +139,20 @@
             }{% if not forloop.last %}, {% endif %}
             {% endfor %}
         ];
-
+        clans.map(e => e.hydra_all?.sort((a, b) => new Date(a.x) - new Date(b.x)));
+        clans.map(e => e.chimera_all?.sort((a, b) => new Date(a.x) - new Date(b.x)));
+        clans.map(e => e.cvc?.sort((a, b) => new Date(a.x) - new Date(b.x)));
+        clans.map(e => e.siege?.sort((a, b) => new Date(a.x) - new Date(b.x)));
+       
+        console.log(clans);
         // Helper to get only last N items
         function lastN(arr, n) {
             return arr.slice(-n);
+        }
+
+                // Helper to get only last N items
+        function firstN(arr, n) {
+            return arr.slice(n);
         }
 
         let hydraChart, chimeraChart;
@@ -195,14 +205,14 @@
                 'Points',
                 null,
                 colors,
-                clan => lastN(clan.hydra_all, 3)
+                clan => firstN(clan.hydra_all, 3)
             );
             chimeraChart = makeLineChart(
                 document.getElementById('chimeraChart'),
                 'Points',
                 null,
                 colors,
-                clan => lastN(clan.chimera_all, 3)
+                clan => firstN(clan.chimera_all, 3)
             );
             makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
 

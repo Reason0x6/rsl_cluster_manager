@@ -197,21 +197,21 @@
         </div>
 
         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <canvas id="hydraScoresChart" class="w-full" style="height: 350px;"></canvas>
+            <div class="chart-container" style="position: relative; height:40vh;">
+                <canvas id="hydraScoresChart" ></canvas>
             </div>
-            <div>
-                <canvas id="chimeraScoresChart" class="w-full" style="height: 350px;"></canvas>
+            <div class="chart-container" style="position: relative; height:40vh;">
+                <canvas id="chimeraScoresChart" ></canvas>
             </div>
         </div>
 
         <div class="mt-4 flex justify-center space-x-4">
-            <button id="last4Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last 4</button>
-            <button id="last16Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last 16</button>
-            <button id="allBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">All</button>
+            <button id="last4Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last Month</button>
+            <button id="last16Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last 3 Months</button>
+            <button id="allBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">All Time</button>
         </div>
 
-        <script>
+        <script>    
             document.addEventListener('DOMContentLoaded', function () {
                 const hydraCtx = document.getElementById('hydraScoresChart').getContext('2d');
                 const chimeraCtx = document.getElementById('chimeraScoresChart').getContext('2d');
@@ -232,8 +232,9 @@
                                     text: title
                                 }
                             }
-                        });
-                }
+                        }
+                });
+            }
 
                 const hydraScoresData = {
                     labels: clash_scoresData.labels,
@@ -272,190 +273,56 @@
                     const hydraSubset = clash_scoresData.hydra_scores.slice(-dataPoints);
                     const chimeraSubset = clash_scoresData.chimera_scores.slice(-dataPoints);
                     const labelsSubset = clash_scoresData.labels.slice(-dataPoints);
+                    if (hydraChart) {
+                        hydraChart.destroy();
+                    }
+                    if (chimeraChart) {
+                        chimeraChart.destroy();
+                    }
+                    hydraChart = createChart(hydraCtx, {
+                        labels: labelsSubset,
+                        datasets: [
+                            {
+                                label: 'Hydra Scores',
+                                data: hydraSubset,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 3,
+                                tension: 0.2,
+                                pointRadius: 3,
+                            }
+                        ]
+                    }, 'Hydra Scores');
+                    document.getElementById('hydraScoresChart').style.height = '350px';
+                    document.getElementById('hydraScoresChart').style.width = '100%';
 
-                    hydraChart.data.labels = labelsSubset;
-                    hydraChart.data.datasets[0].data = hydraSubset;
-                    hydraChart.update();
-
-                    chimeraChart.data.labels = labelsSubset;
-                    chimeraChart.data.datasets[0].data = chimeraSubset;
-                    chimeraChart.update();
+                    chimeraChart = createChart(chimeraCtx, {
+                        labels: labelsSubset,
+                        datasets: [
+                            {
+                                label: 'Chimera Scores',
+                                data: chimeraSubset,
+                                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                                borderColor: 'rgba(153, 102, 255, 1)',
+                                borderWidth: 3,
+                                tension: 0.2,
+                                pointRadius: 3,
+                            }
+                        ]
+                    }, 'Chimera Scores');
+                    document.getElementById('chimeraScoresChart').style.height = '350px';
+                    document.getElementById('chimeraScoresChart').style.width = '100%';
                 }
 
                 document.getElementById('last4Btn').addEventListener('click', () => updateCharts(4));
                 document.getElementById('last16Btn').addEventListener('click', () => updateCharts(16));
                 document.getElementById('allBtn').addEventListener('click', () => updateCharts(clash_scoresData.labels.length));
+
+                updateCharts(4); // Default to last 4 scores
             });
         </script>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const hydraCtx = document.getElementById('hydraScoresChart').getContext('2d');
-            const chimeraCtx = document.getElementById('chimeraScoresChart').getContext('2d');
-            const clash_scoresData = JSON.parse("{{ clash_scores_data|safe|escapejs }}");
-
-            const hydraScoresData = {
-                labels: clash_scoresData.labels,
-                datasets: [
-                    {
-                        label: 'Hydra Scores',
-                        data: clash_scoresData.hydra_scores,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 3,
-                        tension: 0.2,
-                        pointRadius: 3,
-                    }
-                ]
-            };
-
-            const chimeraScoresData = {
-                labels: clash_scoresData.labels,
-                datasets: [
-                    {
-                        label: 'Chimera Scores',
-                        data: clash_scoresData.chimera_scores,
-                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 3,
-                        tension: 0.2,
-                        pointRadius: 3,
-                    }
-                ]
-            };
-
-            new Chart(hydraCtx, {
-                type: 'line',
-                data: hydraScoresData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Hydra Scores'
-                        }
-                    }
-                }
-            });
-
-            new Chart(chimeraCtx, {
-                type: 'line',
-                data: chimeraScoresData,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: 'Chimera Scores'
-                        }
-                    }
-                }
-            });
-        });
-
-        function openModal() {
-            document.getElementById('teamModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('teamModal').classList.add('hidden');
-        }
-
-        document.getElementById('editTeamsBtn').addEventListener('click', openModal);
-
-        // Add search functionality
-        document.getElementById('teamSearch').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const teamRows = document.querySelectorAll('.team-row');
-            
-            teamRows.forEach(row => {
-                const teamName = row.querySelector('span').textContent.toLowerCase();
-                if (teamName.includes(searchTerm)) {
-                    row.style.display = 'flex';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-
-        // Improve toggle team visual feedback
-        function toggleTeam(checkbox) {
-            const teamRow = checkbox.closest('.team-row');
-            if (checkbox.checked) {
-                teamRow.classList.add('bg-purple-600/20');
-            } else {
-                teamRow.classList.remove('bg-purple-600/20');
-            }
-        }
-
-        async function saveTeams() {
-            const selectedTeams = Array.from(document.querySelectorAll('input[name="team_types"]:checked'))
-                .map(cb => cb.value);
-            
-            try {
-                const response = await fetch(`/player/{{ player.uuid }}/teams/`, { // Corrected URL
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: JSON.stringify({ team_types: selectedTeams })
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    throw new Error('Failed to save teams');
-                }
-            } catch (error) {
-                console.error('Error saving teams:', error);
-                alert('Failed to save teams. Please try again.');
-            }
-        }
-
-        async function removeTeam(teamId) {
-            if (!confirm('Are you sure you want to remove this team?')) return;
-            
-            try {
-                const response = await fetch(`/player/{{ player.uuid }}/teams/${teamId}/`, { // Corrected URL
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    }
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    throw new Error('Failed to remove team');
-                }
-            } catch (error) {
-                console.error('Error removing team:', error);
-                alert('Failed to remove team. Please try again.');
-            }
-        }
-
-        // Select All functionality
-        document.getElementById('selectAll').addEventListener('click', function() {
-            const checkboxes = document.querySelectorAll('input[name="team_types"]:not([disabled])');
-            const visibleCheckboxes = Array.from(checkboxes).filter(cb => 
-                cb.closest('.team-row').style.display !== 'none'
-            );
-            
-            const allChecked = visibleCheckboxes.every(cb => cb.checked);
-            visibleCheckboxes.forEach(checkbox => {
-                checkbox.checked = !allChecked;
-                toggleTeam(checkbox);
-            });
-        });
-    </script>
 </div>
 {% endblock %}

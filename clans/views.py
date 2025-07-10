@@ -66,10 +66,10 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
     clash_scores_data = {
         "labels": [
             f"{score.type} ({score.date_recorded.strftime('%Y-%m-%d')})"
-            for score in player.clash_scores.all()
+            for score in player.clash_scores.all().order_by("date_recorded")
         ],
-        "hydra_scores": [float(score.score) for score in player.clash_scores.filter(type="hydra")],
-        "chimera_scores": [float(score.score) for score in player.clash_scores.filter(type="chimera")],
+        "hydra_scores": [float(score.score) for score in player.clash_scores.filter(type="hydra").order_by("date_recorded")],
+        "chimera_scores": [float(score.score) for score in player.clash_scores.filter(type="chimera").order_by("date_recorded")],
     }
 
     context = {
@@ -824,6 +824,7 @@ def assign_siege_plan(request, plan_id):
         'player_data': json.dumps(player_data), 
         'team_types': get_team_types_as_json(),  # Serialize list of tupples data as JSON
     })
+
 @login_required
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
@@ -1075,7 +1076,6 @@ def extract_clash_player_data(request):
         Extract the Player name, score and keys used, per player, from these images of a Raid Shadow Legends Clash Results page. 
         Scores are shown in the format "<decimal>B" (e.g. "1.5B" for 1.5 billion). and will only ever be 2 decimal places followed by "B" (billions) or "M" Millions.
         Make sure to convert the score to a decimal number, e.g. "1.5B" should be converted to 1500000000, and "150.5M" should be converted to 1505000000.
-        Then format the score as a decimal with the unit strictly Billions (e.g. 1500000000 should be formatted as 1.5, 1505000000 should be formatted as 0.1505).
         The keys used are shown as a number from 0 to 3, representing the number of keys used by the player.
         The results should be returned as a JSON array of objects, each with "Name", "Score" and "Keys used" fields.
         The "Name" field should be the player's name, the "Score" field should be a decimal number, and the "Keys used" field should be an integer.
