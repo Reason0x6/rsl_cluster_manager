@@ -1,0 +1,36 @@
+name: Cleanup Docker Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup-images:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List all images in the registry
+        id: list-images
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://${{ env.REGISTRY }}/v2/${{ github.repository }}/tags/list | jq '.tags[]' > tags.txt
+
+      - name: Filter and delete non-release/master images
+        run: |
+          while read tag; do
+            if [[ "$tag" != "release" && "$tag" != "master" ]]; then
+              echo "Deleting image with tag: $tag"
+              curl -X DELETE -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                https://${{ env.REGISTRY }}/v2/${{ github.repository }}/manifests/$tag
+            fi
+          done < tags.txt
