@@ -13,5 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Expose the port your app runs on (adjust as needed)
 EXPOSE 8000
 
-# Define the command to run your app
-CMD ["python", "app.py"]
+# Add an environment variable for first-time setup
+ENV FIRST_TIME_SETUP=false
+
+# Modify the CMD to use the first_time_setup.py script for first-time setup
+CMD if [ "$FIRST_TIME_SETUP" = "true" ]; then \
+      python first_time_setup.py; \
+    fi; \
+    python app.py
