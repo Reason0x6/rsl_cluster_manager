@@ -84,3 +84,148 @@ MIT License
 ---
 
 *This project is not affiliated with Plarium or Raid: Shadow Legends.*
+
+# RSL Clan Manager Project
+
+## Overview
+The RSL Clan Manager is a Django-based application designed to manage clans, players, and scores for Hydra and Chimera clashes. This guide will walk you through setting up the project using Docker.
+
+## Prerequisites
+Before you begin, ensure you have the following installed:
+
+- Docker: [Install Docker](https://docs.docker.com/get-docker/)
+- Docker Compose (optional): [Install Docker Compose](https://docs.docker.com/compose/install/)
+
+## Setup Instructions
+
+### Step 1: Clone the Repository
+Clone the project repository to your local machine:
+
+```bash
+git clone https://github.com/Reason0x6/rsl_cluster_manager.git
+cd rsl_cluster_manager
+```
+
+### Step 2: Build the Docker Image
+Build the Docker image for the project:
+
+```bash
+docker build -t rsl-clan-manager .
+```
+
+### Step 3: Create a Volume for the Database
+Create a Docker volume to persist the SQLite database:
+
+```bash
+docker volume create rsl-clan-manager-db
+```
+
+### Step 4: Run the Container
+Run the Docker container, mounting the volume at `/app/db`. If this is the first time setting up the application, enable the `FIRST_TIME_SETUP` flag to create the database:
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v rsl-clan-manager-db:/app/db \
+  -e FIRST_TIME_SETUP=true \
+  --name rsl-clan-manager \
+  rsl-clan-manager
+```
+
+For subsequent runs, you can omit the `FIRST_TIME_SETUP` flag:
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v rsl-clan-manager-db:/app/db \
+  --name rsl-clan-manager \
+  rsl-clan-manager
+```
+
+### Step 5: Access the Application
+Once the container is running, you can access the application at:
+
+```
+http://localhost:8000
+```
+
+### Step 6: Manage the Database
+The SQLite database file is stored in the mounted volume at `/app/db`. You can access it using SQLite tools or by inspecting the volume:
+
+```bash
+docker inspect rsl-clan-manager-db
+```
+
+## Additional Commands
+
+### Stop the Container
+To stop the running container:
+
+```bash
+docker stop rsl-clan-manager
+```
+
+### Remove the Container
+To remove the container:
+
+```bash
+docker rm rsl-clan-manager
+```
+
+### Rebuild the Image
+If you make changes to the code and need to rebuild the image:
+
+```bash
+docker build -t rsl-clan-manager .
+```
+
+### Logs
+To view the container logs:
+
+```bash
+docker logs rsl-clan-manager
+```
+
+## Environment Variables
+
+The application requires the following environment variables to be set:
+
+- `GOOGLE_API_KEY`: API key for Google services. This is mandatory.
+- `DJANGO_SECRET_KEY`: Secret key for Django. If not set, the default value in `settings.py` will be used (Insecure).
+- `DJANGO_ALLOWED_HOSTS`: Comma-separated list of allowed hosts. If not set, the default value in `settings.py` will be used.
+- `DJANGO_CSRF_TRUSTED_ORIGINS`: Comma-separated list of trusted origins for CSRF protection. If not set, the default value in `settings.py` will be used.
+
+### Example
+
+To set these variables in a Docker container, use the `-e` flag:
+
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v rsl-clan-manager-db:/app/db \
+  -e GOOGLE_API_KEY=your-google-api-key \
+  -e DJANGO_SECRET_KEY=your-django-secret-key \
+  -e DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+  -e DJANGO_CSRF_TRUSTED_ORIGINS=https://localhost,https://127.0.0.1 \
+  -e GOOGLE_API_KEY=12345678-ABCDEF
+  --name rsl-clan-manager \
+  rsl-clan-manager
+```
+
+## Notes
+- Ensure the `SECRET_KEY` in `settings.py` is updated for production.
+- For production, consider using a more robust database like PostgreSQL.
+- Update `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` in `settings.py` to match your deployment environment.
+
+## Troubleshooting
+If you encounter issues, check the following:
+
+- Ensure Docker is running.
+- Verify the volume is correctly mounted.
+- Check the container logs for errors:
+
+```bash
+docker logs rsl-clan-manager
+```
+
+For further assistance, consult the [Django documentation](https://docs.djangoproject.com/en/stable/) or the [Docker documentation](https://docs.docker.com/).
