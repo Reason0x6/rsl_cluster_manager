@@ -21,10 +21,18 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-gray-800 rounded-xl shadow-lg p-6">
             <h2 class="text-lg font-semibold text-white mb-4">Player Statistics</h2>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-3">
                 <div class="bg-gray-700/50 p-4 rounded-lg">
                     <span class="text-sm text-gray-400">Player Power</span>
                     <p class="text-2xl font-bold text-white">{{ player.player_power|floatformat:3 }}M</p>
+                </div>
+                <div class="bg-gray-700/50 p-4 rounded-lg">
+                    <span class="text-sm text-gray-400">Hydra Clash Average</span>
+                    <p class="text-2xl font-bold text-white">{{ hydra_clash_avg|default:"N/A"|floatformat:3 }}</p>
+                </div>
+                <div class="bg-gray-700/50 p-4 rounded-lg">
+                    <span class="text-sm text-gray-400">Chimera Clash Average</span>
+                    <p class="text-2xl font-bold text-white">{{ chimera_clash_avg|default:"N/A"|floatformat:3 }}</p>
                 </div>
                 
             </div>
@@ -125,22 +133,7 @@
                     </button>
                 </div>
 
-                <!-- Search and Select All -->
-                <div class="flex items-center space-x-3 mb-4">
-                    <div class="relative flex-1">
-                        <input type="text" 
-                               id="teamSearch" 
-                               placeholder="Search teams..." 
-                               class="bg-gray-700 text-white text-sm rounded-lg w-full pl-10 pr-3 py-2 focus:ring-1 focus:ring-purple-500">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                    </div>
-                    <label class="flex items-center space-x-2 text-sm text-gray-400">
-                        <input type="checkbox" 
-                               id="selectAll" 
-                               class="form-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500">
-                        <span>Select All</span>
-                    </label>
-                </div>
+               
 
                 <!-- Teams Grid -->
                 <div class="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto py-2">
@@ -172,45 +165,78 @@
         </div>
     </div>
 
+    
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="chart-container" style="position: relative; height:40vh;">
+                    <canvas id="hydraScoresChart" ></canvas>
+                </div>
+                <div class="chart-container" style="position: relative; height:40vh;">
+                    <canvas id="chimeraScoresChart" ></canvas>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-center space-x-4">
+                <button id="last4Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last Month</button>
+                <button id="last16Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last 3 Months</button>
+                <button id="allBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">All Time</button>
+            </div>
+        </div> 
+
     <!-- Player Clash Scores -->
-    <div class="bg-gray-800 rounded-xl shadow-lg p-6">
-        <h2 class="text-lg font-semibold text-white mb-4">Player Clash Scores</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-400">
-                <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
-                    <tr>
-                        <th class="px-4 py-3">Activity Type</th>
-                        <th class="px-4 py-3">Score</th>
-                        <th class="px-4 py-3">Date Recorded</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for score in clash_scores %}
-                    <tr class="border-b border-gray-700 hover:bg-gray-700/30">
-                        <td class="px-4 py-3">{{ score.type|title }}</td>
-                        <td class="px-4 py-3">{{ score.score|default:"N/A" }}</td>
-                        <td class="px-4 py-3">{{ score.date_recorded|date:"Y-m-d" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="chart-container" style="position: relative; height:40vh;">
-                <canvas id="hydraScoresChart" ></canvas>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Hydra Clash Scores</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                                <th class="px-4 py-3">Activity Type</th>
+                                <th class="px-4 py-3">Score</th>
+                                <th class="px-4 py-3">Date Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for score in clash_scores %}
+                            {% if score.type == "hydra" %}
+                            <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                                <td class="px-4 py-3">{{ score.type|title }}</td>
+                                <td class="px-4 py-3">{{ score.score|default:"N/A" }}</td>
+                                <td class="px-4 py-3">{{ score.date_recorded|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="chart-container" style="position: relative; height:40vh;">
-                <canvas id="chimeraScoresChart" ></canvas>
+
+            <div class="bg-gray-800 rounded-xl shadow-lg p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Chimera Clash Scores</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-400">
+                        <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
+                            <tr>
+                                <th class="px-4 py-3">Activity Type</th>
+                                <th class="px-4 py-3">Score</th>
+                                <th class="px-4 py-3">Date Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for score in clash_scores %}
+                            {% if score.type == "chimera" %}
+                            <tr class="border-b border-gray-700 hover:bg-gray-700/30">
+                                <td class="px-4 py-3">{{ score.type|title }}</td>
+                                <td class="px-4 py-3">{{ score.score|default:"N/A" }}</td>
+                                <td class="px-4 py-3">{{ score.date_recorded|date:"Y-m-d" }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-
-        <div class="mt-4 flex justify-center space-x-4">
-            <button id="last4Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last Month</button>
-            <button id="last16Btn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Last 3 Months</button>
-            <button id="allBtn" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">All Time</button>
-        </div>
-
+        </div> 
         <script>    
             document.addEventListener('DOMContentLoaded', function () {
                 const hydraCtx = document.getElementById('hydraScoresChart').getContext('2d');
@@ -322,8 +348,25 @@
                 updateCharts(4); // Default to last 4 scores
             });
         </script>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editTeamsBtn = document.getElementById('editTeamsBtn');
+        const teamModal = document.getElementById('teamModal');
+
+        editTeamsBtn.addEventListener('click', function () {
+            teamModal.classList.remove('hidden');
+        });
+
+        function closeModal() {
+            teamModal.classList.add('hidden');
+        }
+
+        // Ensure closeModal function is available globally
+        window.closeModal = closeModal;
+    });
+</script>
 {% endblock %}

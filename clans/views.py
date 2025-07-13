@@ -82,6 +82,8 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
         "arena_teams": arena_teams,
         "all_team_types": TeamType.objects.all().order_by("name"),
         "clash_scores_data": json.dumps(clash_scores_data),
+        "hydra_clash_avg": clash_scores_data["hydra_scores"] and sum(clash_scores_data["hydra_scores"]) / len(clash_scores_data["hydra_scores"]) or None,
+        "chimera_clash_avg":clash_scores_data["chimera_scores"] and sum(clash_scores_data["chimera_scores"]) / len(clash_scores_data["chimera_scores"]) or None,
     }
     return render(request, 'clans/player_detail.html', context)
 
