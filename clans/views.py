@@ -64,9 +64,13 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
     logger.info(f"{arena_teams}")
             
     clash_scores_data = {
-        "labels": [
-            f"{score.type} ({score.date_recorded.strftime('%Y-%m-%d')})"
-            for score in player.clash_scores.all().order_by("date_recorded")
+        "hydra_labels": [
+            f"({score.date_recorded.strftime('%Y-%m-%d')})"
+            for score in player.clash_scores.filter(type="hydra").order_by("date_recorded")
+        ],
+        "chimera_labels": [
+            f"({score.date_recorded.strftime('%Y-%m-%d')})"
+            for score in player.clash_scores.filter(type="chimera").order_by("date_recorded")
         ],
         "hydra_scores": [float(score.score) for score in player.clash_scores.filter(type="hydra").order_by("date_recorded")],
         "chimera_scores": [float(score.score) for score in player.clash_scores.filter(type="chimera").order_by("date_recorded")],

@@ -272,7 +272,8 @@
                 function updateCharts(dataPoints) {
                     const hydraSubset = clash_scoresData.hydra_scores.slice(-dataPoints);
                     const chimeraSubset = clash_scoresData.chimera_scores.slice(-dataPoints);
-                    const labelsSubset = clash_scoresData.labels.slice(-dataPoints);
+                    const hydraLabels = clash_scoresData.hydra_labels.slice(-dataPoints);
+                    const chimeraLabels = clash_scoresData.chimera_labels.slice(-dataPoints);
                     if (hydraChart) {
                         hydraChart.destroy();
                     }
@@ -280,7 +281,7 @@
                         chimeraChart.destroy();
                     }
                     hydraChart = createChart(hydraCtx, {
-                        labels: labelsSubset,
+                        labels: hydraLabels,
                         datasets: [
                             {
                                 label: 'Hydra Scores',
@@ -297,7 +298,7 @@
                     document.getElementById('hydraScoresChart').style.width = '100%';
 
                     chimeraChart = createChart(chimeraCtx, {
-                        labels: labelsSubset,
+                        labels: chimeraLabels,
                         datasets: [
                             {
                                 label: 'Chimera Scores',
