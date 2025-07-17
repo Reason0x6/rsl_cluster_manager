@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-your-secret-key-here-change-me' # IMPORTANT: Change this for production!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.1.215', '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = ['https://*.127.0.0.1', 'https://*localhost*']
@@ -21,10 +21,13 @@ CSRF_TRUSTED_ORIGINS = ['https://*.127.0.0.1', 'https://*localhost*']
 
 # Dynamically modify settings based on environment variables
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', SECRET_KEY)
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', ','.join(ALLOWED_HOSTS)).split(',')
-CSRF_TRUSTED_ORIGINS = os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', ','.join(CSRF_TRUSTED_ORIGINS)).split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('DJANGO_ALLOWED_HOSTS', ','.join(ALLOWED_HOSTS)).split(',')]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('DJANGO_CSRF_TRUSTED_ORIGINS', ','.join(CSRF_TRUSTED_ORIGINS)).split(',')]
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY','')
 
+
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+print("CSRF_TRUSTED_ORIGINS:", CSRF_TRUSTED_ORIGINS)
 # Application definition
 
 INSTALLED_APPS = [

@@ -5,6 +5,9 @@
 {% block title %}{{ clan.name }} - Clan Details{% endblock %}
 
 {% block content %}
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <div class="space-y-10">
     <header class="bg-brand-surface rounded-xl shadow-lg overflow-hidden">
         <!-- Main Header -->
@@ -350,6 +353,171 @@
                                 </tbody>
                             </table>
                         </div>
+                        
+        <!-- Add Canvas for Hydra Graph -->
+        {% if activity_type == 'Hydra' %}
+        <div class="mt-6">
+            <canvas id="hydraGraph"></canvas>
+        </div>
+        <script>
+            const hydraData = JSON.parse('{{ hydra_scores|default:"[]"|escapejs }}');
+            const hydraLabels = hydraData.clan_score.map(item => item.date);
+            const hydraScores = hydraData.clan_score.map(item => item.score);
+            const hydraTop1 = hydraData.first_place.map(item => item.score);
+            const hydraTop2 = hydraData.second_place.map(item => item.score);
+            const hydraTop3 = hydraData.third_place.map(item => item.score);
+            console.log(hydraData);
+            if (typeof Chart !== 'undefined') {
+                const hydraConfig = {
+                    type: 'line',
+                    data: {
+                        labels: hydraLabels,
+                        datasets: [{
+                            label: 'Hydra Scores',
+                            data: hydraScores,
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'First Place Scores',
+                            data: hydraTop1,
+                            borderColor: 'rgba(255, 215, 0, 0.2)', // Gold
+                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Second Place Scores',
+                            data: hydraTop2,
+                            borderColor: 'rgba(192, 192, 192,  0.2)', // Silver
+                            backgroundColor: 'rgba(192, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Third Place Scores',
+                            data: hydraTop3,
+                            borderColor: 'rgba(205, 127, 50, 0.2)', // Bronze
+                            backgroundColor: 'rgba(205, 127, 50, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Hydra Performance Over Time'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Score'
+                                }
+                            }
+                        }
+                    }
+                };
+                new Chart(document.getElementById('hydraGraph'), hydraConfig);
+            }
+        </script>
+        {% endif %}
+
+        <!-- Add Canvas for Chimera Graph -->
+        {% if activity_type == 'Chimera' %}
+        <div class="mt-6">
+            <canvas id="chimeraGraph"></canvas>
+        </div>
+        <script>
+            const chimeraData = JSON.parse('{{ chimera_scores|default:"[]"|escapejs }}');
+            const chimeraLabels = chimeraData.clan_score.map(item => item.date);
+            const chimeraScores = chimeraData.clan_score.map(item => item.score);
+            const chimeraTop1 = chimeraData.first_place.map(item => item.score);
+            const chimeraTop2 = chimeraData.second_place.map(item => item.score);
+            const chimeraTop3 = chimeraData.third_place.map(item => item.score);
+
+            if (typeof Chart !== 'undefined') {
+                const chimeraConfig = {
+                    type: 'line',
+                    data: {
+                        labels: chimeraLabels,
+                        datasets: [{
+                            label: 'Chimera Scores',
+                            data: chimeraScores,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },{
+                            label: 'First Place Scores',
+                            data: chimeraTop1,
+                            borderColor: 'rgba(255, 215, 0, 0.2)', // Gold
+                            backgroundColor: 'rgba(255, 215, 0, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Second Place Scores',
+                            data: chimeraTop2,
+                            borderColor: 'rgba(192, 192, 192, 0.2)', // Silver
+                            backgroundColor: 'rgba(192, 192, 192, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Third Place Scores',
+                            data: chimeraTop3,
+                            borderColor: 'rgba(205, 127, 50, 0.2)', // Bronze
+                            backgroundColor: 'rgba(205, 127, 50, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Chimera Performance Over Time'
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Score'
+                                }
+                            }
+                        }
+                    }
+                };
+                new Chart(document.getElementById('chimeraGraph'), chimeraConfig);
+            }
+        </script>
+        {% endif %}
                     {% else %}
                         <p class="text-gray-400 text-center py-4">No {{ activity_type }} records yet.</p>
                     {% endif %}
@@ -663,53 +831,57 @@ async function deleteSiegePlan(planId) {
 
 
 
-document.addEventListener('DOMContentLoaded', function () {
-    const table = document.getElementById('siegePlansTable');
-    const searchInput = document.getElementById('siegePlanSearch');
-    const paginationContainer = document.getElementById('siegePlansPagination');
-    const rowsPerPage = 5;
-    let currentPage = 1;
+// document.addEventListener('DOMContentLoaded', function () {
+//     const table = document.getElementById('siegePlansTable');
+//     const paginationContainer = document.getElementById('siegePlansPagination');
 
-    function filterTable() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const name = row.querySelector('td:first-child').textContent.toLowerCase();
-            const matches = name.includes(searchTerm);
-            row.style.display = matches ? '' : 'none';
-        });
-        paginateTable();
-    }
+//     if (!table || !searchInput || !paginationContainer) {
+//         console.error('One or more required DOM elements are missing.');
+//         return;
+//     }
 
-    function paginateTable() {
-        const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
+//     const rowsPerPage = 5;
+//     let currentPage = 1;
 
-        // Hide all rows
-        rows.forEach(row => (row.style.display = 'none'));
+//     function filterTable() {
+//         const rows = table.querySelectorAll('tbody tr');
+//         rows.forEach(row => {
+//             const name = row.querySelector('td:first-child').textContent.toLowerCase();
+//             const matches = name.includes(searchTerm);
+//             row.style.display = matches ? '' : 'none';
+//         });
+//         paginateTable();
+//     }
 
-        // Show rows for the current page
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        rows.slice(start, end).forEach(row => (row.style.display = ''));
+//     function paginateTable() {
+//         const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+//         const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-        // Update pagination buttons
-        paginationContainer.innerHTML = '';
-        for (let i = 1; i <= totalPages; i++) {
-            const button = document.createElement('button');
-            button.textContent = i;
-            button.className = `px-3 py-1 rounded-lg ${i === currentPage ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`;
-            button.addEventListener('click', () => {
-                currentPage = i;
-                paginateTable();
-            });
-            paginationContainer.appendChild(button);
-        }
-    }
+//         // Hide all rows
+//         rows.forEach(row => (row.style.display = 'none'));
 
-    searchInput.addEventListener('input', filterTable);
-    paginateTable();
-});
+//         // Show rows for the current page
+//         const start = (currentPage - 1) * rowsPerPage;
+//         const end = start + rowsPerPage;
+//         rows.slice(start, end).forEach(row => (row.style.display = ''));
+
+//         // Update pagination buttons
+//         paginationContainer.innerHTML = '';
+//         for (let i = 1; i <= totalPages; i++) {
+//             const button = document.createElement('button');
+//             button.textContent = i;
+//             button.className = `px-3 py-1 rounded-lg ${i === currentPage ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`;
+//             button.addEventListener('click', () => {
+//                 currentPage = i;
+//                 paginateTable();
+//             });
+//             paginationContainer.appendChild(button);
+//         }
+//     }
+
+//     searchInput.addEventListener('input', filterTable);
+//     paginateTable();
+// });
 
 document.addEventListener('DOMContentLoaded', function () {
     const playersTable = document.getElementById('playersTable');
@@ -855,6 +1027,7 @@ function showScoresModal(recordId, activityType) {
     fetch(`/api/activities/${activityType}/${recordId}/scores/`)
         .then(response => response.json())
         .then(data => {
+            
             const rowsContent = data.scores.map(score => `
                 <tr class="border-b border-gray-700 hover:bg-gray-700/30">
                     <td class="px-4 py-3">${score.player__name}</td>
@@ -978,4 +1151,6 @@ function useExtractedJson() {
     }
 }
 </script>
+
+
 {% endblock %}
