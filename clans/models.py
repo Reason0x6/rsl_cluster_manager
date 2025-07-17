@@ -241,13 +241,15 @@ class HydraClash(models.Model):
         return ', '.join(f"{k}: {v}" for k, v in self.opponent_scores.items())
 
     @property
-    def score(self):
-        """Get our clan's score from the opponent_scores JSON field"""
-        try:
-            score = self.opponent_scores.get(self.clan.name, 0)
-            return float(score) if isinstance(score, (int, float, str)) else 0
-        except (ValueError, TypeError):
-            return 0
+    def get_top_3_scores(self):
+        """
+        Returns the top 3 (clan, score) tuples ordered by score descending from opponent_scores.
+        """
+        scores = []
+        for score in self.opponent_scores.items():
+            scores.append(score[1])
+                    
+        return sorted(scores, reverse=True)[:3]
 
     @property
     def rank(self):
@@ -290,20 +292,22 @@ class ChimeraClash(models.Model):
 
     def __str__(self):
         return f"Chimera Clash: {self.clan.name} ({self.date_recorded.strftime('%Y-%m-%d')})"
-
+    
+    @property
+    def get_top_3_scores(self):
+        """
+        Returns the top 3 (clan, score) tuples ordered by score descending from opponent_scores.
+        """
+        scores = []
+        for score in self.opponent_scores.items():
+            scores.append(score[1])
+                    
+        return sorted(scores, reverse=True)[:3]
+        
     @property
     def scores_display(self):
         """Format opponent scores for admin display"""
         return ', '.join(f"{k}: {v}" for k, v in self.opponent_scores.items())
-
-    @property
-    def score(self):
-        """Get our clan's score from the opponent_scores JSON field"""
-        try:
-            score = self.opponent_scores.get(self.clan.name, 0)
-            return float(score) if isinstance(score, (int, float, str)) else 0
-        except (ValueError, TypeError):
-            return 0
 
     @property
     def rank(self):
@@ -333,6 +337,7 @@ class ChimeraClash(models.Model):
             return float(self.opponent_scores.get(self.clan.name, 0))
         except (ValueError, TypeError):
             return 0
+        
 TEAM_CHOICES = [
     # Factions
     ('banner_lords', 'Banner Lords'),
