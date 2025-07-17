@@ -37,12 +37,12 @@ def home(request):
         # Defensive: fallback to empty list if no hydra clashes
         hydra_qs = clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         clan.hydra_history_list = [
-            {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(hydra, 'score', getattr(hydra, 'get', lambda: 0)())}
+            {'date': hydra.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(hydra, 'get_clan_score', getattr(hydra, 'get', lambda: 0)())}
             for hydra in hydra_qs
         ] if hydra_qs else []
         chimera_qs = clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         clan.chimera_history_list = [
-            {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(chimera, 'score', getattr(chimera, 'get', lambda: 0)())}
+            {'date': chimera.date_recorded.strftime('%Y-%m-%d'), 'score': getattr(chimera, 'get_clan_score', getattr(chimera, 'get', lambda: 0)())}
             for chimera in chimera_qs
         ] if chimera_qs else []
         siege_qs = clan.siege_records.all().order_by('-date_recorded')[:10]
@@ -165,38 +165,38 @@ def clan_detail(request, clan_id):
     hydra_scores = {
         "clan_score": [
             {"score": hydra_clash.get_clan_score(), "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.hydra_clashes.all()
+            for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "first_place": [
             {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.hydra_clashes.all()
+            for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "second_place": [
             {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.hydra_clashes.all()
+            for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "third_place": [
             {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.hydra_clashes.all()
+            for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
     }
-    
+
     chimera_scores = {
-       "clan_score": [
+        "clan_score": [
             {"score": hydra_clash.get_clan_score(), "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.chimera_clashes.all()
+            for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "first_place": [
             {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.chimera_clashes.all()
+            for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "second_place": [
             {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.chimera_clashes.all()
+            for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "third_place": [
             {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
-            for hydra_clash in clan.chimera_clashes.all()
+            for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
     }
 
