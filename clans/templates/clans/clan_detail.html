@@ -361,11 +361,11 @@
         </div>
         <script>
             const hydraData = JSON.parse('{{ hydra_scores|default:"[]"|escapejs }}');
-            const hydraLabels = hydraData.clan_score.map(item => item.date);
-            const hydraScores = hydraData.clan_score.map(item => item.score);
-            const hydraTop1 = hydraData.first_place.map(item => item.score);
-            const hydraTop2 = hydraData.second_place.map(item => item.score);
-            const hydraTop3 = hydraData.third_place.map(item => item.score);
+            const hydraLabels = hydraData.clan_score.map(item => item.date).reverse();
+            const hydraScores = hydraData.clan_score.map(item => item.score).reverse();
+            const hydraTop1 = hydraData.first_place.map(item => item.score).reverse();
+            const hydraTop2 = hydraData.second_place.map(item => item.score).reverse();
+            const hydraTop3 = hydraData.third_place.map(item => item.score).reverse();
             console.log(hydraData);
             if (typeof Chart !== 'undefined') {
                 const hydraConfig = {
@@ -444,11 +444,11 @@
         </div>
         <script>
             const chimeraData = JSON.parse('{{ chimera_scores|default:"[]"|escapejs }}');
-            const chimeraLabels = chimeraData.clan_score.map(item => item.date);
-            const chimeraScores = chimeraData.clan_score.map(item => item.score);
-            const chimeraTop1 = chimeraData.first_place.map(item => item.score);
-            const chimeraTop2 = chimeraData.second_place.map(item => item.score);
-            const chimeraTop3 = chimeraData.third_place.map(item => item.score);
+            const chimeraLabels = chimeraData.clan_score.map(item => item.date).reverse();
+            const chimeraScores = chimeraData.clan_score.map(item => item.score).reverse();
+            const chimeraTop1 = chimeraData.first_place.map(item => item.score).reverse();
+            const chimeraTop2 = chimeraData.second_place.map(item => item.score).reverse();
+            const chimeraTop3 = chimeraData.third_place.map(item => item.score).reverse();
 
             if (typeof Chart !== 'undefined') {
                 const chimeraConfig = {
