@@ -551,7 +551,10 @@
                                 <tr>
                                     <th class="px-4 py-3">Name</th>
                                     <th class="px-4 py-3">Optimiser Link</th>
-                                    <th class="px-4 py-3">Team Types</th>
+                                    <th class="px-4 py-3">Hydra Clash Avg</th>
+                                    <th class="px-4 py-3">Chimera Clash Avg</th>
+                                    <th class="px-4 py-3">Ranking Score</th>
+                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -571,20 +574,17 @@
                                     {% else %}
                                         <span class="text-gray-400">N/A</span>
                                     {% endif %}
-                                </td>
-                                   <td class="px-4 py-3">
-                                        {% if player.team_types.exists %}
-                                            {% with team_types=player.team_types.all|slice:":5" %}
-                                                {{ team_types|join:", " }}
-                                                {% if player.team_types.count > 5 %}
-                                                    ...
-                                                {% endif %}
-                                            {% endwith %}
-                                        {% else %}
-                                            <span class="text-gray-400">No teams assigned</span>
-                                        {% endif %}
                                     </td>
-                                </tr>
+                                    <td class="px-4 py-3">
+                                        <span class="text-gray-400">{{player.hydra_clash_score}}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-gray-400">{{player.chimera_clash_score}}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-gray-400">{{ player.ranking_points}}</span>
+                                
+                                </td>    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>

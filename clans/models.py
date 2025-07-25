@@ -5,6 +5,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 import json
 from django.contrib.postgres.fields import JSONField  # For storing JSON data
 from django.contrib import admin
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from decimal import Decimal
+
+
 
 class Player(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -64,6 +69,7 @@ class Player(models.Model):
         blank=True,
         null=True
     )
+    ranking_points = models.FloatField(null=True, blank=True)
     hh_optimiser_link = models.URLField(null=True, blank=True)
     development_notes = models.TextField(blank=True, null=True)
     team_types = models.ManyToManyField('TeamType', related_name='players', blank=True)
@@ -81,6 +87,48 @@ class Player(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def hydra_clash_score(self):
+        clash_scores = self.clash_scores.filter(type="hydra").values_list("score", flat=True)
+        return round(sum(clash_scores) / len(clash_scores), 2) if clash_scores else None
+
+    @property
+    def chimera_clash_score(self):
+        clash_scores = self.clash_scores.filter(type="chimera").values_list("score", flat=True)
+        return round(sum(clash_scores) / len(clash_scores), 2) if clash_scores else None
+
+    @property
+    def calculate_ranking_points(self):
+        # Fetch general settings for weights
+        settings = GeneralSettings.objects.first()
+        hydra_weight = Decimal(settings.hydra_weight if settings else 0.3)
+        chimera_weight = Decimal(settings.chimera_weight if settings else 0.7)
+
+        # Handle missing data
+        hydra_avg = Decimal(self.hydra_clash_score or 0)
+        chimera_avg = Decimal(self.chimera_clash_score or 0)
+
+        # Fetch all players' scores for normalization
+        all_players = Player.objects.all()
+        hydra_scores = [Decimal(player.hydra_clash_score or 0) for player in all_players]
+        chimera_scores = [Decimal(player.chimera_clash_score or 0) for player in all_players]
+
+        # Min-Max normalization
+        hydra_min, hydra_max = min(hydra_scores, default=Decimal(0)), max(hydra_scores, default=Decimal(1))
+        chimera_min, chimera_max = min(chimera_scores, default=Decimal(0)), max(chimera_scores, default=Decimal(1))
+
+        hydra_norm = (hydra_avg - hydra_min) / (hydra_max - hydra_min) if hydra_max != hydra_min else Decimal(0)
+        chimera_norm = (chimera_avg - chimera_min) / (chimera_max - chimera_min) if chimera_max != chimera_min else Decimal(0)
+
+        # Weighted sum
+        return round((hydra_norm * hydra_weight) + (chimera_norm * chimera_weight), 4)
+
+    def save(self, *args, **kwargs):
+        # Calculate ranking points
+        self.ranking_points = self.calculate_ranking_points  # Remove parentheses
+        super().save(*args, **kwargs)
+
+    
 class Clan(models.Model):
     CLAN_BOSS_LEVELS = [
         ('easy', 'Easy'),
@@ -534,3 +582,38 @@ admin.site.register(LABattle)
 admin.site.register(SiegePlan)
 admin.site.register(PostAssignment)
 admin.site.register(ArenaTeam)
+
+class GeneralSettings(models.Model):
+    hydra_weight = models.FloatField(
+        default=0.3,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Weight for Hydra average in ranking calculation (0 to 1)"
+    )
+    chimera_weight = models.FloatField(
+        default=0.7,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        help_text="Weight for Chimera average in ranking calculation (0 to 1)"
+    )
+
+    def __str__(self):
+        return "General Settings"
+
+    class Meta:
+        verbose_name = "General Setting"
+        verbose_name_plural = "General Settings"
+
+        
+admin.site.register(GeneralSettings)
+
+@receiver(post_save, sender=GeneralSettings)
+def recalculate_all_rankings(sender, instance, **kwargs):
+    # Fetch all players and update their ranking points
+    for player in Player.objects.all():
+        player.ranking_points = player.calculate_ranking_points
+        player.save(update_fields=['ranking_points'])
+
+@receiver(post_save, sender=Player)
+def update_ranking_points(sender, instance, **kwargs):
+    if 'ranking_points' not in kwargs.get('update_fields', []):
+        instance.ranking_points = instance.calculate_ranking_points
+        instance.save(update_fields=['ranking_points'])

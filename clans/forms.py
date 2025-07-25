@@ -172,8 +172,8 @@ class PlayerManagementForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = [
-            'name', 'player_power', 'hydra_clash_score', 'hydra_difficulty_multi',
-            'chimera_clash_score', 'chimera_difficulty_multi', 'siege', 'activity',
+            'name', 'player_power', 'hydra_difficulty_multi',
+            'chimera_difficulty_multi', 'siege', 'activity',
             'dependability', 'hh_optimiser_link', 'development_notes', 'team_types', 'clan'
         ]
         widgets = {
