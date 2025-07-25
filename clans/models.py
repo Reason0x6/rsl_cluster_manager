@@ -614,6 +614,7 @@ def recalculate_all_rankings(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Player)
 def update_ranking_points(sender, instance, **kwargs):
-    if 'ranking_points' not in kwargs.get('update_fields', []):
+    update_fields = kwargs.get('update_fields', [])
+    if update_fields is None or 'ranking_points' not in update_fields:
         instance.ranking_points = instance.calculate_ranking_points
         instance.save(update_fields=['ranking_points'])

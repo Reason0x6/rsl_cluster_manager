@@ -619,9 +619,7 @@ def import_players(request):
             player = Player.objects.filter(name__iexact=name).first()
             fields_map = {
                 'player_power': player_data.get('Player Power'),
-                'hydra_clash_score': player_data.get('Hydra Clash'),
                 'hydra_difficulty_multi': player_data.get('Hydra Difficulty') or [],
-                'chimera_clash_score': player_data.get('Chimera Clash'),
                 'chimera_difficulty_multi': player_data.get('Chimera Difficulty') or [],
                 'siege': player_data.get('Siege'),
                 'activity': player_data.get('Activity'),
