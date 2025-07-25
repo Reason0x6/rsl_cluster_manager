@@ -168,15 +168,15 @@ def clan_detail(request, clan_id):
             for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "first_place": [
-            {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 0 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "second_place": [
-            {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 1 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "third_place": [
-            {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 2 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
     }
@@ -187,15 +187,15 @@ def clan_detail(request, clan_id):
             for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "first_place": [
-            {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[0] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 0 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "second_place": [
-            {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[1] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 1 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
         "third_place": [
-            {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_top_3_scores[2] if hydra_clash.get_top_3_scores and len(hydra_clash.get_top_3_scores) > 2 else None, "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
             for hydra_clash in clan.chimera_clashes.all().order_by('-date_recorded')[:10]
         ],
     }
@@ -619,9 +619,7 @@ def import_players(request):
             player = Player.objects.filter(name__iexact=name).first()
             fields_map = {
                 'player_power': player_data.get('Player Power'),
-                'hydra_clash_score': player_data.get('Hydra Clash'),
                 'hydra_difficulty_multi': player_data.get('Hydra Difficulty') or [],
-                'chimera_clash_score': player_data.get('Chimera Clash'),
                 'chimera_difficulty_multi': player_data.get('Chimera Difficulty') or [],
                 'siege': player_data.get('Siege'),
                 'activity': player_data.get('Activity'),
@@ -1121,7 +1119,6 @@ def extract_clash_player_data(request):
         Extract the Player name, score and keys used, per player, from these images of a Raid Shadow Legends Clash Results page. 
         Scores are shown in the format "<decimal>B" (e.g. "1.5B" for 1.5 billion). and will only ever be 2 decimal places followed by "B" (billions) or "M" Millions.
         Make sure to convert the score to a decimal number, e.g. "1.5B" should be converted to 1500000000, and "150.5M" should be converted to 1505000000.
-        You should then format the score as a decimal number, using Billions as the units, without any suffixes or prefixes (e.g. 1500000000 should be formatted as 1.5, 1505000000 should be formatted as 0.1505).
         The keys used are shown as a number from 0 to 3, representing the number of keys used by the player.
         The results should be returned as a JSON array of objects, each with "Name", "Score" and "Keys used" fields.
         The "Name" field should be the player's name, the "Score" field should be a decimal number, and the "Keys used" field should be an integer.

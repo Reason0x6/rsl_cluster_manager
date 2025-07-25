@@ -200,20 +200,22 @@
         document.addEventListener('DOMContentLoaded', function() {
             const colors = ['#34d399', '#818cf8', '#f472b6', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
             makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors);
-            hydraChart = makeLineChart(
-                document.getElementById('hydraChart'),
-                'Points',
-                null,
-                colors,
-                clan => firstN(clan.hydra_all, 3)
-            );
-            chimeraChart = makeLineChart(
-                document.getElementById('chimeraChart'),
-                'Points',
-                null,
-                colors,
-                clan => firstN(clan.chimera_all, 3)
-            );
+           
+        hydraChart = makeLineChart(
+            document.getElementById('hydraChart'),
+            'Points',
+            null,
+            colors,
+            clan => lastN(clan.hydra_all, 3) // Show the last 4 results initially
+        );
+
+        chimeraChart = makeLineChart(
+            document.getElementById('chimeraChart'),
+            'Points',
+            null,
+            colors,
+            clan => lastN(clan.chimera_all, 3) // Show the last 4 results initially
+        );
             makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
 
             // Load More Hydra
