@@ -21,6 +21,8 @@ import os
 import re
 from django.db.models import Avg
 
+from .prompt_service import generate_siege_post_prompt, generate_clash_player_prompt
+
 logger = logging.getLogger(__name__)
 
 def home(request):
@@ -1060,19 +1062,11 @@ def extract_siege_post_data(request):
         return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
 
     images = request.FILES.getlist('images')
-
-    prompt = (
-        "Extract the post number and all choices from this image of a Raid Shadow Legends siege post. There should be a post number and a list of exactly 3 choices. "
-        "The choices should be selected only from this list of valid team types: "
-        f"{[choice[0] for choice in TEAM_CHOICES]}. "
-        "Return only a JSON object like: {{\"Post\": <number>, \"Choices\": [\"choice1\", \"choice2\", ...]}}."
-    )
+    prompt = generate_siege_post_prompt()
 
     service_response = extract_raid_data_service(images, prompt)
     if 'error' in service_response:
         return JsonResponse({'error': service_response['error']}, status=service_response['status'])
-
-   
 
     return JsonResponse(service_response['results'], safe=False)
 
@@ -1083,53 +1077,9 @@ def extract_clash_player_data(request):
         return JsonResponse({'error': 'Only POST requests are accepted'}, status=405)
 
     images = request.FILES.getlist('images')
-    clanPlayers = [player.name for player in Clan.objects.get(clan_id=request.POST.get('clan_id')).players.all()]
-    print(clanPlayers)
+    clan_id = request.POST.get('clan_id')
+    prompt = generate_clash_player_prompt(clan_id)
 
-    json_schema_string = """
-            {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "title": "List of User Accounts",
-            "description": "A list of user accounts.",
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                "Name": {
-                    "type": "string"
-                },
-                "Score": {
-                    "type": "number"
-                },
-                "Keys used": {
-                    "type": "integer",
-                    "enum": [0, 1, 2, 3]
-                }
-                },
-                "required": [
-                "Name",
-                "Score",
-                "Keys used"
-                ]
-            }
-            }
-            """
-    
-    prompt = f"""
-        Extract the Player name, score and keys used, per player, from these images of a Raid Shadow Legends Clash Results page. 
-        Scores are shown in the format "<decimal>B" (e.g. "1.5B" for 1.5 billion). and will only ever be 2 decimal places followed by "B" (billions) or "M" Millions.
-        Make sure to convert the score to a decimal number, e.g. "1.5B" should be converted to 1500000000, and "150.5M" should be converted to 1505000000.
-        The keys used are shown as a number from 0 to 3, representing the number of keys used by the player.
-        The results should be returned as a JSON array of objects, each with "Name", "Score" and "Keys used" fields.
-        The "Name" field should be the player's name, the "Score" field should be a decimal number, and the "Keys used" field should be an integer.
-        The player names should be selected only from this list of valid players: 
-        {clanPlayers}. 
-        if a player is not in this list, they should not be included in the results.
-        if a player is in the list but has no score, they should be included with a score of 0 and keys used of 0.
-        Return only a JSON object that fits the following schema:
-        {json_schema_string}
-        
-    """
     service_response = extract_raid_data_service(images, prompt)
     if 'error' in service_response:
         return JsonResponse({'error': service_response['error']}, status=service_response['status'])
@@ -1172,7 +1122,6 @@ def create_clash_scores(request):
                 return JsonResponse({'error': 'Invalid activity type'}, status=400)
 
             for score_data in scores:
-                print(score_data)
                 player_id = score_data.get('Name')
                 score = score_data.get('Score')
                 keys_used = score_data.get('Keys used')
