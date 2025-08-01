@@ -1,5 +1,32 @@
 # Release Notes 
 
+# V2.1
+---
+## Summary of Changes
+This update introduces several enhancements, bug fixes, and new features to improve the functionality and user experience of the application. Below are the details for each change:
+
+### Prompt Service
+* **Centralized Prompt Logic**: Created a dedicated `prompt_service.py` to centralize and manage all prompt generation logic, improving code maintainability and reusability.
+
+### Bug Fixes
+* **Template Fixes**: Resolved issues in the player form template and improved formatting for prompts.
+* **Graph Updates**: Fixed issues with home and clan graphs, including formatting and labeling.
+
+### Player Rankings
+* **New Feature**: Added functionality to calculate and display player rankings, enhancing the competitive aspect of the application.
+
+### Graph Enhancements
+* **Reversed Graph Order**: Improved readability by reversing the order of graphs.
+* **Split Graphs**: Separated graphs for better data visualization.
+* **Updated Labels**: Enhanced labeling for player and clan graphs to provide clearer insights.
+
+### Docker Improvements
+* **Configuration Cleanup**: Streamlined Docker configurations for better deployment and maintenance.
+
+### General Improvements
+* **Generic Code Enhancements**: Refactored code to make it more generic and reusable.
+* **Player Progress Graphs**: Enhanced graphs to display player progress and average scores more effectively.
+
 # V2.0
 ---
 ## Summary of Changes
