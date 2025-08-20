@@ -53,6 +53,7 @@ def home(request):
             for siege in siege_qs
         ] if siege_qs else []
 
+
     context = {
         'players': players,
         'clans': clans,
@@ -166,7 +167,7 @@ def clan_detail(request, clan_id):
     # Update Hydra and Chimera scores to use the correct field names
     hydra_scores = {
         "clan_score": [
-            {"score": hydra_clash.get_clan_score(), "date": hydra_clash.date_recorded.strftime('%Y-%m-%d')}
+            {"score": hydra_clash.get_clan_score(), "date": hydra_clash.date_recorded.strftime('%Y-%m-%d'), "Throw": hydra_clash.delebrate_throw}
             for hydra_clash in clan.hydra_clashes.all().order_by('-date_recorded')[:10]
         ],
         "first_place": [
@@ -203,6 +204,10 @@ def clan_detail(request, clan_id):
     }
 
     
+    # Compute hydra average excluding deliberate throws
+    non_throw_hydra = [s for s in hydra_scores["clan_score"] if not s.get("Throw")]
+    hydra_avg_value = (sum(s['score'] for s in non_throw_hydra) / len(non_throw_hydra)) if non_throw_hydra else None
+
     context = {
         'clan': clan,
         'activities_config': activities_config,
@@ -212,8 +217,8 @@ def clan_detail(request, clan_id):
         'siege_performance': round(float(siege_performance), 1),
         'hydra_scores': json.dumps(hydra_scores),
         'chimera_scores': json.dumps(chimera_scores),
-        'hydra_avg': sum(score['score'] for score in hydra_scores["clan_score"]) / len(hydra_scores["clan_score"]) if hydra_scores["clan_score"] else None,
-        'chimera_avg': sum(score['score'] for score in chimera_scores["clan_score"]) / len(chimera_scores["clan_score"]) if chimera_scores["clan_score"] else None,    
+        'hydra_avg': hydra_avg_value,
+        'chimera_avg': sum(score['score'] for score in chimera_scores["clan_score"]) / len(chimera_scores["clan_score"]) if chimera_scores["clan_score"] else None,
     }
 
     return render(request, 'clans/clan_detail.html', context)
