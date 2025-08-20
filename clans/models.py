@@ -274,6 +274,8 @@ class HydraClash(models.Model):
     hydra_clash_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     clan = models.ForeignKey(Clan, on_delete=models.CASCADE, related_name='hydra_clashes')
     opponent_scores = models.JSONField(default=dict)
+    # Flag to indicate a deliberate throw (shown as 'Delebrate Throw' checkbox in the form)
+    delebrate_throw = models.BooleanField(default=False)
     date_recorded = models.DateTimeField(default=timezone.now)
     clash_scores = models.ManyToManyField('ClashScore', related_name='hydra_clashes', blank=True, limit_choices_to={'clash_scores__count__lte': 30})
 
@@ -582,6 +584,8 @@ admin.site.register(LABattle)
 admin.site.register(SiegePlan)
 admin.site.register(PostAssignment)
 admin.site.register(ArenaTeam)
+
+# HydraClash and ChimeraClash admin registration is handled in clans/admin.py
 
 class GeneralSettings(models.Model):
     hydra_weight = models.FloatField(

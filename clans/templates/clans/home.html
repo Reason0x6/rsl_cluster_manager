@@ -89,13 +89,16 @@
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">CvC Points Over Time</h3>
                 <canvas id="cvcChart"></canvas>
+                {% if clans|length > 0 %}
+                <button id="loadMoreSvc" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load All</button>
+                {% endif %}
             </div>
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">Hydra Points Over Time</h3>
                 <div id="hydraChartContainer">
                     <canvas id="hydraChart"></canvas>
-                    {% if clans|length > 0 and clans.0.hydra_history_list|length > 3 %}
-                    <button id="loadMoreHydra" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load More</button>
+                    {% if clans|length > 0 %}
+                    <button id="loadMoreHydra" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load All</button>
                     {% endif %}
                 </div>
             </div>
@@ -103,14 +106,17 @@
                 <h3 class="text-lg font-semibold text-white mb-2">Chimera Points Over Time</h3>
                 <div id="chimeraChartContainer">
                     <canvas id="chimeraChart"></canvas>
-                    {% if clans|length > 0 and clans.0.chimera_history_list|length > 3 %}
-                    <button id="loadMoreChimera" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load More</button>
+                    {% if clans|length > 0 %}
+                    <button id="loadMoreChimera" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load All</button>
                     {% endif %}
                 </div>
             </div>
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">Siege Points Over Time</h3>
                 <canvas id="siegeChart"></canvas>
+                {% if clans|length > 0 %}
+                <button id="loadMoreSiege" class="mt-2 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 px-3 rounded">Load All</button>
+                {% endif %}
             </div>
         </div>
 
@@ -199,14 +205,25 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const colors = ['#34d399', '#818cf8', '#f472b6', '#fbbf24', '#60a5fa', '#f87171', '#a78bfa', '#facc15'];
-            makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors);
-           
+            // Compute threshold = newest input across all clans (hydra + chimera) minus 30 days
+            const allDates = clans.flatMap(clan => [
+                ...(clan.hydra_all || []).map(r => r.x),
+                ...(clan.chimera_all || []).map(r => r.x)
+            ]).filter(Boolean);
+            const newestMillis = allDates.length ? Math.max(...allDates.map(d => new Date(d).getTime())) : Date.now();
+            const threshold = new Date(newestMillis - 2* 30 * 24 * 60 * 60 * 1000);
+
+            function recentSinceThreshold(arr) {
+                if (!arr || !arr.length) return [];
+                return arr.filter(item => new Date(item.x) > threshold);
+            }
+
         hydraChart = makeLineChart(
             document.getElementById('hydraChart'),
             'Points',
             null,
             colors,
-            clan => lastN(clan.hydra_all, 3) // Show the last 4 results initially
+            clan => recentSinceThreshold(clan.hydra_all) // Show items newer than newest-30d
         );
 
         chimeraChart = makeLineChart(
@@ -214,9 +231,11 @@
             'Points',
             null,
             colors,
-            clan => lastN(clan.chimera_all, 3) // Show the last 4 results initially
+            clan => recentSinceThreshold(clan.chimera_all) // Show items newer than newest-30d
         );
-            makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors);
+        
+        cvcChart = makeLineChart(document.getElementById('cvcChart'), 'Points', 'cvc', colors, clan => recentSinceThreshold(clan.cvc));
+        seigeChart = makeLineChart(document.getElementById('siegeChart'), 'Points', 'siege', colors, clan => recentSinceThreshold(clan.siege));
 
             // Load More Hydra
             const loadMoreHydra = document.getElementById('loadMoreHydra');
@@ -238,6 +257,28 @@
                     });
                     chimeraChart.update();
                     loadMoreChimera.style.display = 'none';
+                });
+            }
+            // Load More CVC
+            const loadMoreCvc = document.getElementById('loadMoreCvc');
+            if (loadMoreCvc) {
+                loadMoreCvc.addEventListener('click', function() {
+                    cvcChart.data.datasets.forEach(function(ds, idx) {
+                        ds.data = clans[idx].cvc;
+                    });
+                    cvcChart.update();
+                    loadMoreCvc.style.display = 'none';
+                });
+            }
+            // Load More Siege
+            const loadMoreSiege = document.getElementById('loadMoreSiege');
+            if (loadMoreSiege) {
+                loadMoreSiege.addEventListener('click', function() {
+                    siegeChart.data.datasets.forEach(function(ds, idx) {
+                        ds.data = clans[idx].siege;
+                    });
+                    siegeChart.update();
+                    loadMoreSiege.style.display = 'none';
                 });
             }
         });

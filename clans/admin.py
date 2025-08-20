@@ -17,14 +17,14 @@ class CvCAdmin(admin.ModelAdmin):
 
 @admin.register(HydraClash)
 class HydraClashAdmin(admin.ModelAdmin):
-    list_display = ['clan', 'date_recorded', 'scores_display']  # Removed tier
-    list_filter = ['clan']  # Removed tier
+    list_display = ['clan', 'date_recorded', 'scores_display', 'delebrate_throw']
+    list_filter = ['clan', 'delebrate_throw']
     ordering = ['-date_recorded']
 
 @admin.register(ChimeraClash)
 class ChimeraClashAdmin(admin.ModelAdmin):
-    list_display = ['clan', 'date_recorded', 'scores_display']  # Removed tier
-    list_filter = ['clan']  # Removed tier
+    list_display = ['clan', 'date_recorded', 'scores_display']
+    list_filter = ['clan']
     ordering = ['-date_recorded']
 
 admin.site.register(Player)

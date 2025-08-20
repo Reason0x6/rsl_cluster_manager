@@ -53,10 +53,11 @@ class SiegeForm(forms.ModelForm):
 
 class HydraClashForm(forms.ModelForm):
     opponent_scores = forms.JSONField(widget=forms.HiddenInput())
+    delebrate_throw = forms.BooleanField(required=False, label='Delebrate Throw')
     
     class Meta:
         model = HydraClash
-        fields = ['date_recorded', 'opponent_scores']
+        fields = ['date_recorded', 'opponent_scores', 'delebrate_throw']
         widgets = {
             'date_recorded': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }
