@@ -57,6 +57,8 @@ urlpatterns = [
     path('clan/<uuid:clan_id>/siege-plan/create/', views.create_siege_plan, name='create_siege_plan'),
     path('siege-plan/<int:plan_id>/assign/', views.assign_siege_plan, name='assign_siege_plan'),
     path('siege-plan/<int:plan_id>/export/', views.export_siege_plan, name='export_siege_plan'),
+    path('siege-plan/<int:plan_id>/assignment/<int:post_number>/select-team/', views.update_assignment_team, name='update_assignment_team'),
+    path('siege-plan/<int:plan_id>/assignment/<int:post_number>/set-player/', views.update_assignment_player, name='update_assignment_player'),
     path('siege-plan/<int:plan_id>/delete/', views.delete_siege_plan, name='delete_siege_plan'),
 
     # New URL patterns

@@ -833,7 +833,15 @@ def assign_siege_plan(request, plan_id):
         {
             'id': str(player.uuid),
             'name': player.name,
-            'team_types': [team.name for team in player.team_types.all()]
+            'team_types': [team.name for team in player.team_types.all()],
+            'arena_teams': [
+                {
+                    'id': str(at.id),
+                    'team_type': at.team_type.name if at.team_type else '',
+                    'champions': at.champions
+                }
+                for at in player.arena_teams.all()
+            ]
         }
         for player in players
     ]
@@ -844,6 +852,12 @@ def assign_siege_plan(request, plan_id):
             'team_choice': assignment.team_choice ,
             'player': str(assignment.assigned_player.uuid) if assignment.assigned_player else None
         }
+        for assignment in PostAssignment.objects.filter(siege_plan=siege_plan)
+    }
+
+    # Saved selected arena teams (per post) so the JS can prefill them when loading
+    saved_selected_teams = {
+        assignment.post_number: (str(assignment.selected_arena_team.id) if assignment.selected_arena_team else None)
         for assignment in PostAssignment.objects.filter(siege_plan=siege_plan)
     }
 
@@ -871,15 +885,142 @@ def assign_siege_plan(request, plan_id):
     return render(request, 'clans/assign_siege_plan.html', {
         'form': form,
         'siege_plan': siege_plan,
-        'player_data': json.dumps(player_data), 
-        'team_types': get_team_types_as_json(),  # Serialize list of tupples data as JSON
+    'player_data': json.dumps(player_data),
+    'team_types': get_team_types_as_json(),  # Serialize list of tupples data as JSON
+    'saved_selected_teams': json.dumps(saved_selected_teams),
     })
 
 @login_required
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
     assignments = siege_plan.assignments.all()
+    
     return render(request, 'clans/export_siege_plan.html', {'siege_plan': siege_plan, 'assignments': assignments})
+
+
+@login_required
+def update_assignment_team(request, plan_id, post_number):
+    """AJAX endpoint to set or clear the selected ArenaTeam for a PostAssignment.
+
+    Server-side validation performed:
+    - If arena_team_id provided, ensure the ArenaTeam exists and belongs to the assigned player (if an assigned player exists on the PostAssignment).
+    - Ensure that selecting this team doesn't cause champion overlap with other already-selected teams on the same SiegePlan.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+    siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+    assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        payload = {}
+
+    arena_team_id = payload.get('arena_team_id')
+
+    # clearing the selection
+    if not arena_team_id:
+        assignment.selected_arena_team = None
+        assignment.save(update_fields=['selected_arena_team'])
+        return JsonResponse({'success': True, 'cleared': True})
+
+    # fetch arena team and validate ownership
+    try:
+        arena_team = ArenaTeam.objects.get(id=arena_team_id)
+    except ArenaTeam.DoesNotExist:
+        return JsonResponse({'error': 'arena team not found'}, status=404)
+
+    # If the assignment has an assigned player, ensure the arena_team belongs to that player
+    if assignment.assigned_player and arena_team.player_id != assignment.assigned_player.pk:
+        print(f"Arena team {arena_team.id} does not belong to assigned player {getattr(assignment.assigned_player, 'pk', None)}, { arena_team.player_id}")
+        return JsonResponse({'error': 'arena team does not belong to the assigned player'}, status=400)
+
+    # Validate champion uniqueness across other selected teams in this plan
+    new_champs = set()
+    if isinstance(arena_team.champions, (list, tuple)):
+        new_champs = set(map(str, arena_team.champions))
+    else:
+        # try to parse comma/pipe separated string
+        try:
+            new_champs = set([c.strip() for c in str(arena_team.champions).replace('||', ',').split(',') if c.strip()])
+        except Exception:
+            new_champs = set()
+
+    # collect champions used by other selected teams for the same assigned player only
+    used = set()
+    if assignment.assigned_player:
+        other_selected = PostAssignment.objects.filter(siege_plan=siege_plan, assigned_player=assignment.assigned_player).exclude(post_number=post_number).exclude(selected_arena_team__isnull=True)
+        for other in other_selected.select_related('selected_arena_team'):
+            champs = other.selected_arena_team.champions
+            if isinstance(champs, (list, tuple)):
+                used.update(map(str, champs))
+            else:
+                used.update([c.strip() for c in str(champs).replace('||', ',').split(',') if c.strip()])
+    else:
+        # no assigned player on this post -> do not enforce per-player uniqueness
+        used = set()
+
+    if new_champs & used:
+        return JsonResponse({'error': 'champion overlap with other selected teams', 'conflict': list(new_champs & used)}, status=400)
+
+    # Passed validation, save
+    assignment.selected_arena_team = arena_team
+    assignment.save(update_fields=['selected_arena_team'])
+    return JsonResponse({'success': True})
+
+@login_required
+@require_http_methods(["POST"])
+def update_assignment_player(request, plan_id, post_number):
+    """AJAX endpoint to set or clear the assigned player for a PostAssignment.
+
+    If the post's previously-selected arena team does not belong to the new player, the arena team selection
+    will be cleared server-side and the response will include that information.
+    """
+    try:
+        siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+        assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
+    except Exception:
+        return JsonResponse({'error': 'not found'}, status=404)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        payload = {}
+
+    player_uuid = payload.get('player_uuid')
+
+    if not player_uuid:
+        # clearing assigned player
+        assignment.assigned_player = None
+        # clear selected arena team since no player is assigned
+        if assignment.selected_arena_team is not None:
+            assignment.selected_arena_team = None
+            assignment.save(update_fields=['assigned_player', 'selected_arena_team'])
+            return JsonResponse({'success': True, 'cleared_selected_arena_team': True})
+        assignment.save(update_fields=['assigned_player'])
+        return JsonResponse({'success': True, 'cleared_selected_arena_team': False})
+
+    # set assigned player
+    try:
+        player = Player.objects.get(uuid=player_uuid)
+    except Player.DoesNotExist:
+        return JsonResponse({'error': 'player not found'}, status=404)
+
+    cleared = False
+    # If a selected_arena_team exists and it doesn't belong to the new player, clear it
+    if assignment.selected_arena_team and assignment.selected_arena_team.player_id != player.pk:
+        assignment.selected_arena_team = None
+        cleared = True
+
+    assignment.assigned_player = player
+    # Save both fields (assigned_player and maybe selected_arena_team)
+    if cleared:
+        assignment.save(update_fields=['assigned_player', 'selected_arena_team'])
+    else:
+        assignment.save(update_fields=['assigned_player'])
+
+    return JsonResponse({'success': True, 'cleared_selected_arena_team': cleared})
 
 @csrf_exempt
 @login_required
