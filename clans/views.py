@@ -1,6 +1,31 @@
 import base64
 from decimal import Decimal
 import logging
+import json
+import os
+import re
+import markdown
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+from django.views.generic import ListView, DetailView
+from .models import TEAM_CHOICES, ArenaTeam, Clan, ClashScore, Player, TeamType, CvC, HydraClash, ChimeraClash, Siege, LABattle, SiegePlan, PostAssignment
+from .forms import PlayerForm, ClanForm, CvCForm, SiegeForm, HydraClashForm, ChimeraClashForm, SiegePlanForm, PostAssignmentForm, ArenaTeamForm, PlayerManagementForm
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
+from django.conf import settings
+import google.generativeai as genai
+import jsonschema
+import json
+import os
+import re
+from django.db.models import Avg
+import markdown
+from django.utils.safestring import mark_safe
+import os
 import os
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -20,6 +45,10 @@ import json
 import os
 import re
 from django.db.models import Avg
+
+import markdown
+from django.utils.safestring import mark_safe
+import os
 
 from .prompt_service import generate_siege_post_prompt, generate_clash_player_prompt
 
@@ -963,8 +992,9 @@ def update_assignment_team(request, plan_id, post_number):
 
     if new_champs & used:
         return JsonResponse({'error': 'champion overlap with other selected teams', 'conflict': list(new_champs & used)}, status=400)
-
-    # Passed validation, save
+    if arena_team.team_type is assignment.team_choice:
+        print(f"Arena team {arena_team.id} type {arena_team.team_type} does not match assignment team choice {assignment.team_choice}")
+        return JsonResponse({'error': 'arena team type mismatch'}, status=400)
     assignment.selected_arena_team = arena_team
     assignment.save(update_fields=['selected_arena_team'])
     return JsonResponse({'success': True})
@@ -1019,6 +1049,55 @@ def update_assignment_player(request, plan_id, post_number):
         assignment.save(update_fields=['assigned_player', 'selected_arena_team'])
     else:
         assignment.save(update_fields=['assigned_player'])
+
+    return JsonResponse({'success': True, 'cleared_selected_arena_team': cleared})
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_assignment_choice(request, plan_id, post_number):
+    """AJAX endpoint to set or clear the team_choice for a PostAssignment.
+
+    If the post's previously-selected arena team does not match the new choice, the arena team
+    selection will be cleared server-side and the response will include that information.
+    """
+    try:
+        siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+        assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
+    except Exception:
+        return JsonResponse({'error': 'not found'}, status=404)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        payload = {}
+
+    team_choice = payload.get('team_choice')
+
+    # Clearing the choice
+    if not team_choice:
+        cleared = False
+        if assignment.team_choice:
+            assignment.team_choice = None
+            if assignment.selected_arena_team is not None:
+                assignment.selected_arena_team = None
+                cleared = True
+            # Save both fields if cleared selected arena team, otherwise only team_choice
+            assignment.save(update_fields=['team_choice', 'selected_arena_team'] if cleared else ['team_choice'])
+        return JsonResponse({'success': True, 'cleared_selected_arena_team': cleared})
+
+    # Setting a new choice
+    cleared = False
+    # If an arena team is selected and its type does not match the new choice, clear it
+    if assignment.selected_arena_team and assignment.selected_arena_team.team_type != team_choice:
+        assignment.selected_arena_team = None
+        cleared = True
+
+    assignment.team_choice = team_choice
+    if cleared:
+        assignment.save(update_fields=['team_choice', 'selected_arena_team'])
+    else:
+        assignment.save(update_fields=['team_choice'])
 
     return JsonResponse({'success': True, 'cleared_selected_arena_team': cleared})
 
@@ -1300,3 +1379,25 @@ def create_clash_scores(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+def user_guide(request, doc=None):
+    """
+    Render a Markdown user guide from the docs/ directory.
+    If no doc is specified, render 'index.md'.
+    """
+    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'docs')
+    if not doc:
+        doc = 'index.md'
+    if not doc.endswith('.md'):
+        doc += '.md'
+    doc_path = os.path.abspath(os.path.join(docs_dir, doc))
+    # Prevent directory traversal
+    if not doc_path.startswith(os.path.abspath(docs_dir)):
+        return render(request, 'clans/user_guide.html', {'content': '<h2>Invalid document path.</h2>'})
+    if not os.path.exists(doc_path):
+        return render(request, 'clans/user_guide.html', {'content': '<h2>Document not found.</h2>'})
+    with open(doc_path, encoding='utf-8') as f:
+        md_content = f.read()
+    html = markdown.markdown(md_content, extensions=['fenced_code', 'tables'])
+    return render(request, 'clans/user_guide.html', {'content': mark_safe(html), 'doc': doc})

@@ -59,6 +59,7 @@ urlpatterns = [
     path('siege-plan/<int:plan_id>/export/', views.export_siege_plan, name='export_siege_plan'),
     path('siege-plan/<int:plan_id>/assignment/<int:post_number>/select-team/', views.update_assignment_team, name='update_assignment_team'),
     path('siege-plan/<int:plan_id>/assignment/<int:post_number>/set-player/', views.update_assignment_player, name='update_assignment_player'),
+    path('siege-plan/<int:plan_id>/assignment/<int:post_number>/set-choice/', views.update_assignment_choice, name='update_assignment_choice'),
     path('siege-plan/<int:plan_id>/delete/', views.delete_siege_plan, name='delete_siege_plan'),
 
     # New URL patterns
@@ -79,4 +80,7 @@ urlpatterns = [
     path('api/activities/<str:activity_type>/<uuid:record_id>/scores/', views.get_activity_scores, name='get_activity_scores'),
     path('api/clash-scores/', views.create_clash_scores, name='create_clash_scores'),
 
+    # User Guide URLs
+    path('user-guide/', views.user_guide, name='user_guide_index'),
+    path('user-guide/<str:doc>/', views.user_guide, name='user_guide'),
 ]
