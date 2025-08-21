@@ -6,3 +6,4 @@ requests
 pillow
 google-generativeai
 jsonschema 
+markdown>=3.4.1
