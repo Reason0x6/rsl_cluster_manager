@@ -14,13 +14,7 @@ from decimal import Decimal
 class Player(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
-    player_power = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        help_text="Enter player power in millions (e.g., 4.5 for 4.5M)"
-    )
+
     hydra_clash_score = models.DecimalField(
         max_digits=7,
         decimal_places=3,
@@ -177,13 +171,6 @@ class Clan(models.Model):
 
     def __str__(self):
         return self.name
-
-    @property
-    def total_power(self):
-        """Calculate total player power for all clan members"""
-        return self.players.aggregate(
-            total=models.Sum('player_power', default=0)
-        )['total'] or 0
 
     def get_boss_levels(self):
         """Returns list of boss levels"""

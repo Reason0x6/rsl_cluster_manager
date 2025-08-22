@@ -125,10 +125,10 @@
                     <i class="fas fa-home w-5 h-5"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="{% url 'player_list' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white rounded-lg">
+                <!-- <a href="{% url 'player_list' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white rounded-lg">
                     <i class="fas fa-user-plus w-5 h-5"></i>
                     <span>Manage Players</span>
-                </a>
+                </a> -->
                 <a href="{% url 'clan_create' %}" class="flex items-center space-x-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white rounded-lg">
                     <i class="fas fa-users w-5 h-5"></i>
                     <span>Add Clan</span>
@@ -333,13 +333,11 @@
                                     data-name="{{ clan.name|lower }}"
                                     data-level="{{ clan.clan_level|default:0 }}"
                                     data-members="{{ clan.players.all|length|default:0 }}"
-                                    data-power="{{ clan.total_power|floatformat:2|default:0 }}"
                                     data-hydra="{{ clan.hydra_clash_required_score|floatformat:1|default:0 }}"
                                     data-chimera="{{ clan.chimera_clash_required_score|floatformat:1|default:0 }}">
                                     <td class="px-4 py-3 text-white font-medium">{{ clan.name }}</td>
                                     <td class="px-4 py-3">{{ clan.clan_level }}</td>
                                     <td class="px-4 py-3">{{ clan.players.all|length }}</td>
-                                    <td class="px-4 py-3">{{ clan.total_power|floatformat:2 }}M</td>
                                     <td class="px-4 py-3">{{ clan.hydra_clash_required_score|floatformat:1 }}B</td>
                                     <td class="px-4 py-3">{{ clan.chimera_clash_required_score|floatformat:1 }}B</td>
                                 </tr>
@@ -368,9 +366,8 @@
                                         {% for player in clan.players.all %}
                                         <tr class="border-b border-gray-700"
                                             data-name="{{ player.name|lower }}"
-                                            data-power="{{ player.player_power|default:"0" }}">
+                                            >
                                             <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
-                                            <td class="px-4 py-3">{{ player.player_power|default:"--" }}</td>
                                         </tr>
                                         {% empty %}
                                         <tr>
@@ -422,10 +419,7 @@
         const getCellValue = (row, idx, type) => {
             const cell = row.children[idx];
             if (!cell) return '';
-            if (type === 'power') {
-                // Use data-power attribute for numeric sort
-                return parseFloat(cell.getAttribute('data-power')) || 0;
-            }
+            
             if (type === 'name') {
                 return (cell.getAttribute('data-name') || cell.textContent || '').toLowerCase();
             }

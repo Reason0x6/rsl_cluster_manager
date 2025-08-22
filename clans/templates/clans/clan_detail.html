@@ -43,10 +43,7 @@
                 <span class="font-bold text-lg">{{ clan.players.all|length }}</span>
                 <span class="text-gray-400">Members</span>
             </div>
-            <div class="flex flex-col items-center px-3 py-2 bg-gray-900/60 rounded text-xs min-w-[180px]">
-                <span class="font-bold text-lg">{{ clan.total_power|floatformat:2 }}M</span>
-                <span class="text-gray-400">Power</span>
-            </div>
+           
             <div class="flex flex-col items-center px-3 py-2 bg-gray-900/60 rounded text-xs min-w-[180px]">
                 <span class="font-bold text-lg">
                     {% if hydra_avg %}
