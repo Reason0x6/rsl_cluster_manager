@@ -52,7 +52,6 @@ def generate_clash_player_prompt(clan_id):
         The player names should be selected only from this list of valid players: 
         {clan_players}. 
         if a player is not in this list, they should not be included in the results.
-        if a player is in the list but has no score, they should be included with a score of 0 and keys used of 0.
         Return only a JSON object that fits the following schema:
         {json_schema_string}
     """

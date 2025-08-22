@@ -923,8 +923,22 @@ def assign_siege_plan(request, plan_id):
 def export_siege_plan(request, plan_id):
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
     assignments = siege_plan.assignments.all()
-    
-    return render(request, 'clans/export_siege_plan.html', {'siege_plan': siege_plan, 'assignments': assignments})
+    # Build a list of players in the clan and how many posts they're assigned to
+    players = siege_plan.clan.players.all()
+    player_stats = []
+    for player in players:
+        count = assignments.filter(assigned_player=player).count()
+        player_stats.append({
+            'id': str(player.uuid),
+            'name': player.name,
+            'count': count,
+        })
+
+    return render(request, 'clans/export_siege_plan.html', {
+        'siege_plan': siege_plan,
+        'assignments': assignments,
+        'player_stats': player_stats,
+    })
 
 
 @login_required
@@ -939,7 +953,9 @@ def update_assignment_team(request, plan_id, post_number):
         return JsonResponse({'error': 'Invalid method'}, status=405)
 
     siege_plan = get_object_or_404(SiegePlan, id=plan_id)
-    assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
+    # Ensure a PostAssignment exists for this plan/post so the AJAX endpoint
+    # can be used even when assignments haven't been pre-created.
+    assignment, _ = PostAssignment.objects.get_or_create(siege_plan=siege_plan, post_number=post_number)
 
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -992,9 +1008,13 @@ def update_assignment_team(request, plan_id, post_number):
 
     if new_champs & used:
         return JsonResponse({'error': 'champion overlap with other selected teams', 'conflict': list(new_champs & used)}, status=400)
-    if arena_team.team_type is assignment.team_choice:
-        print(f"Arena team {arena_team.id} type {arena_team.team_type} does not match assignment team choice {assignment.team_choice}")
-        return JsonResponse({'error': 'arena team type mismatch'}, status=400)
+    # Ensure team_type matches the PostAssignment.team_choice (exact match by string)
+    # If assignment.team_choice is not set, allow any team_type.
+    if assignment.team_choice:
+        at_type_name = getattr(arena_team.team_type, 'name', None)
+        if at_type_name != assignment.team_choice:
+            print(f"Arena team {arena_team.id} type {at_type_name} does not match assignment team choice {assignment.team_choice}")
+            return JsonResponse({'error': 'arena team type mismatch'}, status=400)
     assignment.selected_arena_team = arena_team
     assignment.save(update_fields=['selected_arena_team'])
     return JsonResponse({'success': True})
@@ -1007,11 +1027,8 @@ def update_assignment_player(request, plan_id, post_number):
     If the post's previously-selected arena team does not belong to the new player, the arena team selection
     will be cleared server-side and the response will include that information.
     """
-    try:
-        siege_plan = get_object_or_404(SiegePlan, id=plan_id)
-        assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
-    except Exception:
-        return JsonResponse({'error': 'not found'}, status=404)
+    siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+    assignment, _ = PostAssignment.objects.get_or_create(siege_plan=siege_plan, post_number=post_number)
 
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -1061,11 +1078,8 @@ def update_assignment_choice(request, plan_id, post_number):
     If the post's previously-selected arena team does not match the new choice, the arena team
     selection will be cleared server-side and the response will include that information.
     """
-    try:
-        siege_plan = get_object_or_404(SiegePlan, id=plan_id)
-        assignment = get_object_or_404(PostAssignment, siege_plan=siege_plan, post_number=post_number)
-    except Exception:
-        return JsonResponse({'error': 'not found'}, status=404)
+    siege_plan = get_object_or_404(SiegePlan, id=plan_id)
+    assignment, _ = PostAssignment.objects.get_or_create(siege_plan=siege_plan, post_number=post_number)
 
     try:
         payload = json.loads(request.body.decode('utf-8') or '{}')
@@ -1089,9 +1103,11 @@ def update_assignment_choice(request, plan_id, post_number):
     # Setting a new choice
     cleared = False
     # If an arena team is selected and its type does not match the new choice, clear it
-    if assignment.selected_arena_team and assignment.selected_arena_team.team_type != team_choice:
-        assignment.selected_arena_team = None
-        cleared = True
+    if assignment.selected_arena_team and team_choice:
+        selected_team_type_name = getattr(assignment.selected_arena_team.team_type, 'name', None)
+        if selected_team_type_name != team_choice:
+            assignment.selected_arena_team = None
+            cleared = True
 
     assignment.team_choice = team_choice
     if cleared:
@@ -1401,3 +1417,24 @@ def user_guide(request, doc=None):
         md_content = f.read()
     html = markdown.markdown(md_content, extensions=['fenced_code', 'tables'])
     return render(request, 'clans/user_guide.html', {'content': mark_safe(html), 'doc': doc})
+
+
+@login_required
+def assignment_probe(request, rest=None):
+    """Lightweight diagnostic endpoint that echoes basic request info as JSON.
+
+    Use this to confirm whether the dev server is receiving requests and which URL is being hit.
+    """
+    try:
+        body = request.body.decode('utf-8') if request.body else ''
+    except Exception:
+        body = '<binary or undecodable body>'
+    data = {
+        'path': request.path,
+        'method': request.method,
+        'GET': request.GET.dict(),
+        'POST': request.POST.dict() if request.method in ('POST', 'PUT') else {},
+        'body': body,
+        'headers': {k: v for k, v in request.META.items() if k.startswith('HTTP_')},
+    }
+    return JsonResponse(data)

@@ -8,15 +8,28 @@
 
     <label for="discord-markdown" class="block text-sm text-gray-400 mb-2">Discord Markdown</label>
     <textarea id="discord-markdown" rows="16" class="w-full bg-gray-800 text-white p-4 rounded-lg font-mono" readonly>
-{% for assignment in assignments %}
-- Post {{ assignment.post_number }}: {{ assignment.team_choice }} — {% if assignment.assigned_player %}{{ assignment.assigned_player.name }}{% else %}Unassigned{% endif %}{% if assignment.selected_arena_team and assignment.selected_arena_team.champions %} ({{ assignment.selected_arena_team.champions|join:", " }}){% endif %}
-{% endfor %}
+{% for assignment in assignments %}- Post {{ assignment.post_number }}: {{ assignment.get_team_choice_display }} — {% if assignment.assigned_player %}{{ assignment.assigned_player.name }}{% else %}Unassigned{% endif %}{% if assignment.selected_arena_team and assignment.selected_arena_team.champions %} ({{ assignment.selected_arena_team.champions|join:", " }})
+{% endif %}{% endfor %}
 </textarea>
 
     <div class="mt-3 flex items-center gap-3">
         <button id="copy-discord-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Copy</button>
         <a href="{% url 'assign_siege_plan' siege_plan.id %}" class="text-sm text-gray-400 hover:underline">Back to assignments</a>
         <span id="discord-copy-msg" class="text-sm text-green-400 hidden">Copied to clipboard</span>
+    </div>
+    
+    <div class="max-w-4xl mx-auto p-6 mt-6">
+        <h3 class="text-xl font-semibold text-white mb-2">Player assignment counts</h3>
+        <label for="player-counts" class="block text-sm text-gray-400 mb-2">Players — number of posts assigned</label>
+        <textarea id="player-counts" rows="8" class="w-full bg-gray-800 text-white p-4 rounded-lg font-mono" readonly>
+{% for p in player_stats %}{{ p.name }} — {{ p.count }}
+{% endfor %}
+        </textarea>
+
+        <div class="mt-3 flex items-center gap-3">
+            <button id="copy-players-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">Copy players</button>
+            <span id="players-copy-msg" class="text-sm text-green-400 hidden">Copied to clipboard</span>
+        </div>
     </div>
 </div>
 
