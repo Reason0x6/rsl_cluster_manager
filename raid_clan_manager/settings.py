@@ -39,8 +39,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'clans.apps.ClansConfig', # Added your app
-    'tailwind', # If you're using Tailwind CSS
+    # 'tailwind' is optional. Attempt to include it only if installed so
+    # Django can start even when the package isn't available in the env.
 ]
+
+# Optionally include third-party apps that may not be installed in all dev
+# environments. This prevents Django from failing to import settings when a
+# package like `django-tailwind` isn't available.
+try:
+    import tailwind  # noqa: F401
+except Exception:
+    # tailwind not installed; skip adding it to INSTALLED_APPS
+    pass
+else:
+    INSTALLED_APPS.append('tailwind')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
