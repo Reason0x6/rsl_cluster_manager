@@ -48,7 +48,6 @@
                         [
                             {
                                 "Name": "PlayerName",
-                                "Player Power": 4.5,
                                 "Hydra Clash": 1.2,
                                 "Hydra Difficulty": ["NM", "B"],
                                 "Chimera Clash": 2.3,
@@ -142,7 +141,6 @@
             <thead class="text-xs text-gray-400 uppercase bg-gray-700/50">
                 <tr>
                     <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="name">Player Name <span class="sort-indicator"></span></th>
-                    <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="power">Player Power (mil) <span class="sort-indicator"></span></th>
                     <th scope="col" class="px-4 py-3 cursor-pointer" data-sort="clan">Current Clan <span class="sort-indicator"></span></th>
                     <th scope="col" class="px-4 py-3">Actions</th>
                 </tr>
@@ -151,10 +149,8 @@
                 {% for player in players %}
                 <tr class="border-b border-gray-700 hover:bg-gray-700/30"
                     data-name="{{ player.name|lower }}"
-                    data-power="{{ player.player_power|default:0 }}"
                     data-clan="{% if player.clans.first %}{{ player.clans.first.name|lower }}{% else %}no clan{% endif %}">
                     <td class="px-4 py-3 text-white font-medium">{{ player.name }}</td>
-                    <td class="px-4 py-3">{{ player.player_power }}</td>
                     <td class="px-4 py-3">
                         {% if player.clans.first %}
                             <span class="bg-blue-600 text-blue-100 text-xs font-medium px-2.5 py-0.5 rounded">

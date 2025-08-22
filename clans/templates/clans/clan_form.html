@@ -50,7 +50,6 @@
                                         data-player-name="{{ choice.name|lower }}"
                                         data-selected="{% if choice.pk in field.value %}1{% else %}0{% endif %}"
                                         data-name="{{ choice.name|lower }}"
-                                        data-power="{{ choice.player_power|default:0 }}">
                                         <td class="px-4 py-2">
                                             <label class="inline-flex items-center space-x-3">
                                                 <input type="checkbox" 
@@ -61,7 +60,6 @@
                                             </label>
                                         </td>
                                         <td class="px-4 py-2 text-white">{{ choice.name }}</td>
-                                        <td class="px-4 py-2 text-right text-white">{{ choice.player_power|floatformat:2|default:"--" }}M</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -164,7 +162,6 @@
                 [
                     {
                         "name": "PlayerName",
-                        "player_power": 4.5
                     },
                     ...
                 ]</pre>

@@ -15,7 +15,7 @@ class PlayerForm(forms.ModelForm):
 
     class Meta:
         model = Player
-        fields = ['name','hh_optimiser_link', 'player_power', 'team_types']
+        fields = ['name','hh_optimiser_link',  'team_types']
 
 class ClanForm(forms.ModelForm):
     clan_boss_level = forms.MultipleChoiceField(
@@ -173,7 +173,7 @@ class PlayerManagementForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = [
-            'name', 'player_power', 'hydra_difficulty_multi',
+            'name', 'hydra_difficulty_multi',
             'chimera_difficulty_multi', 'siege', 'activity',
             'dependability', 'hh_optimiser_link', 'development_notes', 'team_types', 'clan'
         ]

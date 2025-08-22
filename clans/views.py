@@ -116,8 +116,49 @@ def player_detail(request, uuid):  # Change from player_uuid to uuid
         "clash_scores_data": json.dumps(clash_scores_data),
         "hydra_clash_avg": clash_scores_data["hydra_scores"] and sum(clash_scores_data["hydra_scores"]) / len(clash_scores_data["hydra_scores"]) or None,
         "chimera_clash_avg":clash_scores_data["chimera_scores"] and sum(clash_scores_data["chimera_scores"]) / len(clash_scores_data["chimera_scores"]) or None,
+        "clans": Clan.objects.all().order_by("name"),
     }
     return render(request, 'clans/player_detail.html', context)
+
+
+# --- Change Player Clan View ---
+from django.views.decorators.http import require_POST
+@login_required
+@require_POST
+def change_player_clan(request, uuid):
+    player = get_object_or_404(Player, uuid=uuid)
+    clan_id = request.POST.get('clan_id')
+    if clan_id:
+        try:
+            new_clan = Clan.objects.get(clan_id=clan_id)
+        except Clan.DoesNotExist:
+            new_clan = None
+    else:
+        new_clan = None
+    # Remove from all m2m clans except the new one
+    for c in player.clans.exclude(clan_id=clan_id):
+        c.players.remove(player)
+    # Set FK
+    player.clan = new_clan
+    player.save()
+    # Add to new clan's m2m if not already
+    if new_clan and not new_clan.players.filter(pk=player.pk).exists():
+        new_clan.players.add(player)
+    return redirect('player_detail', uuid=player.uuid)
+
+@login_required
+@require_http_methods(["POST"])
+def manage_player_teams(request, player_uuid):
+    import json
+    player = get_object_or_404(Player, uuid=player_uuid)
+    try:
+        data = json.loads(request.body)
+        team_type_ids = data.get('team_types', [])
+        # Set the player's team_types to the selected ones
+        player.team_types.set(team_type_ids)
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
 def player_edit(request, uuid):  # Changed from player_uuid to uuid
@@ -654,7 +695,6 @@ def import_players(request):
 
             player = Player.objects.filter(name__iexact=name).first()
             fields_map = {
-                'player_power': player_data.get('Player Power'),
                 'hydra_difficulty_multi': player_data.get('Hydra Difficulty') or [],
                 'chimera_difficulty_multi': player_data.get('Chimera Difficulty') or [],
                 'siege': player_data.get('Siege'),
@@ -701,7 +741,6 @@ def get_clan_players(request, clan_id):
         players_data = [{
             'uuid': str(player.uuid),
             'name': player.name,
-            'player_power': float(player.player_power or 0),
         } for player in players]
         
         return JsonResponse({
@@ -1203,12 +1242,12 @@ def update_player_data(request, player_id):
             data = json.loads(request.body)
 
             updatable_fields = [
-                'name', 'player_power', 'hydra_clash_score', 'hydra_difficulty_multi',
+                'name',  'hydra_clash_score', 'hydra_difficulty_multi',
                 'chimera_clash_score', 'chimera_difficulty_multi', 'siege', 'activity',
                 'dependability', 'hh_optimiser_link', 'development_notes', 'clan'
             ]
 
-            decimal_fields = ['player_power', 'hydra_clash_score', 'chimera_clash_score']
+            decimal_fields = [ 'hydra_clash_score', 'chimera_clash_score']
 
             old_clan = player.clan  # Track the old clan before update
 

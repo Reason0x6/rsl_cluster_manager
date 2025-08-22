@@ -1,4 +1,5 @@
 {% extends "clans/base.html" %}
+{% load humanize %}
 
 {% block title %}Dashboard - Raid Clan Manager{% endblock %}
 
@@ -42,10 +43,7 @@
                             <span class="inline-block w-20">Boss:</span>
                             <span class="font-medium text-gray-300">{{ clan.get_boss_levels_display|default:"None" }}</span>
                         </p>
-                        <p class="text-sm text-brand-text-muted">
-                            <span class="inline-block w-20">Power:</span>
-                            <span class="font-medium text-gray-300">{{ clan.total_power|floatformat:2 }}M</span>
-                        </p>
+                       
                     </div>
                 </div>
                 <div class="bg-gray-700/50 p-4 border-t border-brand-border flex gap-0 justify-center">
@@ -82,9 +80,67 @@
             <div class="flex-grow">
                 <h2 class="text-3xl font-semibold text-brand-text">Cluster</h2>
             </div>
+            <button id="getClashScoresBtn" class="ml-6 bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-4 rounded-lg">Get Clash Scores</button>
         </div>
 
         <!-- Cluster Comparison Graphs -->
+
+        <!-- Clash Scores Modal -->
+        <div id="clashScoresModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div class="bg-gray-900 rounded-xl p-8 max-w-2xl w-full mx-4 relative">
+                <button onclick="closeClashModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+                <h3 class="text-2xl font-semibold text-white mb-6">Latest Clan Clash Scores</h3>
+                <div class="space-y-6 max-h-[70vh] overflow-y-auto">
+                    {% for clan in clans %}
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <h4 class="text-lg font-bold text-purple-400 mb-2">{{ clan.name }}</h4>
+                        <ul class="text-sm text-gray-200 space-y-1">
+                            <li>
+                                <span class="font-semibold">Hydra:</span>
+                                {% with hydra=clan.hydra_clashes.first %}
+                                    {% if hydra %}
+                                        {{ hydra.get_clan_score|floatformat:3|default:'N/A' }}B
+                                        {% if hydra.rank %}(Rank {{ hydra.rank }}){% endif %}
+                                        — {{ hydra.date_recorded|date:'Y-m-d' }}
+                                    {% else %}N/A{% endif %}
+                                {% endwith %}
+                            </li>
+                            <li>
+                                <span class="font-semibold">Chimera:</span>
+                                {% with chimera=clan.chimera_clashes.first %}
+                                    {% if chimera %}
+                                        {{ chimera.get_clan_score|floatformat:3|default:'N/A' }}B
+                                        {% if chimera.rank %}(Rank {{ chimera.rank }}){% endif %}
+                                        — {{ chimera.date_recorded|date:'Y-m-d' }}
+                                    {% else %}N/A{% endif %}
+                                {% endwith %}
+                            </li>
+                            <li>
+                                <span class="font-semibold">CvC:</span>
+                                {% with cvc=clan.cvcs.first %}
+                                    {% if cvc %}
+                                        {{ cvc.score|intcomma|default:'N/A' }}
+                                        ({{ cvc.result|yesno:'Win,Loss' }})
+                                        — {{ cvc.date_recorded|date:'Y-m-d' }}
+                                    {% else %}N/A{% endif %}
+                                {% endwith %}
+                            </li>
+                            <li>
+                                <span class="font-semibold">Siege:</span>
+                                {% with siege=clan.siege_records.first %}
+                                    {% if siege %}
+                                        {{ siege.points|intcomma|default:'N/A' }}
+                                        ({{ siege.result|yesno:'Win,Loss' }})
+                                        — {{ siege.date_recorded|date:'Y-m-d' }}
+                                    {% else %}N/A{% endif %}
+                                {% endwith %}
+                            </li>
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
             <div class="bg-gray-800 rounded-lg p-4 shadow">
                 <h3 class="text-lg font-semibold text-white mb-2">CvC Points Over Time</h3>
@@ -124,6 +180,15 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
         <script>
+        // Clash Scores Modal logic
+        function closeClashModal() {
+            document.getElementById('clashScoresModal').classList.add('hidden');
+        }
+        document.getElementById('getClashScoresBtn').addEventListener('click', function() {
+            document.getElementById('clashScoresModal').classList.remove('hidden');
+        });
+        </script>
+        <script>
         // Prepare data for charts
         // Each clan will have its own line, X axis is date, Y axis is points
 
@@ -150,7 +215,6 @@
         clans.map(e => e.cvc?.sort((a, b) => new Date(a.x) - new Date(b.x)));
         clans.map(e => e.siege?.sort((a, b) => new Date(a.x) - new Date(b.x)));
        
-        console.log(clans);
         // Helper to get only last N items
         function lastN(arr, n) {
             return arr.slice(-n);

@@ -10,6 +10,7 @@ urlpatterns = [
     path('players/', views.PlayerListView.as_view(), name='player_list'),
     path('player/<uuid:uuid>/', views.player_detail, name='player_detail'),
     path('player/<uuid:uuid>/edit/', views.player_edit, name='player_edit'),
+    path('player/<uuid:uuid>/change-clan/', views.change_player_clan, name='change_player_clan'),
     
     # Clan URLs
     path('clan/<uuid:clan_id>/', views.clan_detail, name='clan_detail'),
