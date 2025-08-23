@@ -93,17 +93,19 @@ class PostAssignmentForm(forms.Form):
         clanObj = Clan.objects.get(name=clan)
         # Get all players in the clan
         players = clanObj.players.all()
-        player_choices = [(str(player.uuid), player.name) for player in players]      
+        # Use primary key as the option value so it matches the `players` data sent to the template JS
+        player_choices = [(str(player.pk), player.name) for player in players]
         for post in posts:
             post_number = post['Post']
             choices = post['Choices']
 
-            # Team Choice Dropdown
+            # Team Choice (render as radio set instead of a select dropdown)
             self.fields[f'post_{post_number}'] = forms.ChoiceField(
-                choices=[('', 'Select a team type')] + [(choice, choice.replace('_', ' ').title()) for choice in choices],
+                choices=[('', 'No Condition')] + [(choice, choice.replace('_', ' ').title()) for choice in choices],
                 required=False,
                 initial=initial_data.get(post_number, {}).get('team_choice'),  # Prepopulate with saved value
-                widget=forms.Select(attrs={
+                widget=forms.RadioSelect(attrs={
+                    # keep the same class and data attribute so existing JS can target inputs
                     'class': 'bg-gray-700 text-white rounded-lg team-choice',
                     'data-post-number': post_number,
                 })
