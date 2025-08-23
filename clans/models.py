@@ -504,7 +504,7 @@ class SiegePlan(models.Model):
 class PostAssignment(models.Model):
     siege_plan = models.ForeignKey(SiegePlan, on_delete=models.CASCADE, related_name='assignments')
     post_number = models.IntegerField()
-    team_choice = models.CharField(max_length=50, choices=TEAM_CHOICES)
+    team_choice = models.CharField(max_length=50, choices=TEAM_CHOICES, null=True, blank=True)
     assigned_player = models.ForeignKey('Player', on_delete=models.SET_NULL, null=True, blank=True)
     # The arena team selected for this post (saved to the siege plan)
     selected_arena_team = models.ForeignKey('ArenaTeam', on_delete=models.SET_NULL, null=True, blank=True, related_name='selected_assignments')
